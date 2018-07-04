@@ -1,0 +1,8 @@
+[package]
+name = "chip8-emulator"
+version = "0.0.1"
+authors = ["Aleksander Wons <aleksander.wons@gmail.com>"]
+
+[dependencies]
+rand = "^0.4"
+ncurses = "^5"
