@@ -2,7 +2,7 @@ mod memory;
 mod chipset;
 mod opcode_processor;
 mod display;
-pub mod keyboard;
+mod keyboard;
 
 use self::chipset::{Chipset, Chip8Chipset, PROGRAM_COUNTER_BOUNDARY};
 use self::memory::{Memory, Stack, Registers};

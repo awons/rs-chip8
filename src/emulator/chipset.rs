@@ -72,7 +72,9 @@ impl <T:TOpCodesProcessor> Chipset for Chip8Chipset<T> {
                     self.opcode_processor.const_vx_equal_nn(&mut self.registers, opcode.get_x(), opcode.get_short_address());
                 }
                 //Add missing matches
-                _ => {}/*panic!(println!("Unknown opcode: {}", x))*/
+                x => {
+                    panic!("Unknown opcode: {}", x);
+                }
             }
         };
     }

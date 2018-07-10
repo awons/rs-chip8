@@ -4,5 +4,5 @@ version = "0.0.1"
 authors = ["Aleksander Wons <aleksander.wons@gmail.com>"]
 
 [dependencies]
-rand = "^0.4"
-ncurses = "^5"
+rand = "^0.5"
+pancurses = "^0.16"
