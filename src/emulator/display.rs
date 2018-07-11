@@ -2,14 +2,37 @@ extern crate pancurses;
 
 use emulator::memory::{Memory};
 use self::pancurses::{Window, initscr, endwin};
-use std::cmp;
+use std::{cmp, ops};
 
 const DISPLAY_WIDTH: usize = 64;
 const DISPLAY_HEIGHT: usize = 32;
 const SPRITE_WIDTH: u8 = 8;
 
-pub struct Display {
+struct DisplayMemory {
     memory: [u8; DISPLAY_WIDTH * DISPLAY_HEIGHT],
+    width: usize,
+}
+
+impl DisplayMemory {
+    fn new() -> Self {
+        DisplayMemory {
+            memory: [0; DISPLAY_WIDTH * DISPLAY_HEIGHT],
+            width: DISPLAY_WIDTH
+        }
+    }
+}
+
+impl ops::Index<usize> for DisplayMemory {
+    type Output = [u8];
+
+    fn index(&self, row: usize) -> &[u8] {
+        let start = row * self.width;
+        &self.memory[start .. start + self.width]
+    }
+}
+
+pub struct Display {
+    memory: DisplayMemory,
     window: Window,
     pixel_width: u8,
     pixel_height: u8
@@ -22,7 +45,7 @@ impl Display {
         let (pixel_width, pixel_height) = Display::calculate_pixel_width_height(&window);
 
         Self {
-            memory: [0; DISPLAY_WIDTH * DISPLAY_HEIGHT],
+            memory: DisplayMemory::new(),
             window,
             pixel_width,
             pixel_height,
@@ -42,7 +65,11 @@ impl Display {
     fn draw_on_canvas(&self, x: u8, y: u8, data: u8) {
         let (window_x, window_y) = self.calculate_window_x_y(x, y);
         self.window.mv(window_x as i32, window_y as i32);
-        self.window.addch(0x25A0);
+        if data == 0 {
+            self.window.addch(' ');
+        } else {
+            self.window.addch(0x25A0);
+        }
     }
 
     fn calculate_window_x_y(&self, x: u8, y: u8) -> (usize, usize) {
@@ -72,19 +99,25 @@ impl TDisplay for Display {
 
         let mut i = 0;
         let mut data;
-        for position_x in x..=SPRITE_WIDTH {
-            for position_y in y..=rows {
+        let mut memory_position;
+        for column in x..=SPRITE_WIDTH {
+            for row in y..=rows {
                 data = memory.read(*address_register + i);
-                if self.memory[x as usize * y as usize] != data {
+                memory_position = row * column + column;
+                if self.memory[memory_position as usize] != data {
                     is_flipped = true;
                 }
-                self.memory[x as usize * y as usize] = data;
-                println!("{}, {}, {}", position_x, position_y, data);
-                self.draw_on_canvas(position_x, position_y, self.memory[x as usize * y as usize]);
+                self.memory[memory_position as usize] = data;
+                println!("runtime - {}:{}", memory_position, data);
+                self.draw_on_canvas(column, row, data);
                 i += 1;
             }
         }
         self.window.refresh();
+
+        for pixel in self.memory.iter() {
+            println!("pixel: {}", pixel)
+        }
 
         is_flipped
     }
@@ -105,16 +138,22 @@ mod test_display {
     fn test_draw_sprite() {
         let mut memory = Memory::new();
         let address_register = 0x100;
-        for address in address_register..0x10f {
+        for address in address_register..0x110 {
             memory.write(address, 1);
         }
 
         let mut display = Display::new();
-        let is_flipped = display.draw_sprite(1, 1, 8, &address_register, &memory);
+        let is_flipped = display.draw_sprite(1, 1, 3, &address_register, &memory);
         assert!(is_flipped);
 
-        for x in 1..=2 {
-            for y in 1..=2 {
+        for x in 0..8 {
+            for y in 0..3 {
+                println!("print - {}:{} {}", x, y, display.get_pixel(x, y));
+            }
+        }
+
+        for x in 0..8 {
+            for y in 0..2 {
                 assert_eq!(display.get_pixel(x, y), 1);
             }
         }
@@ -129,11 +168,11 @@ mod test_display {
         }
 
         let mut display = Display::new();
-        let is_flipped = display.draw_sprite(1, 1, 8, &address_register, &memory);
+        display.draw_sprite(1, 1, 3, &address_register, &memory);
         display.clear();
 
         for x in 1..=8 {
-            for y in 1..=8 {
+            for y in 1..=3 {
                 assert_eq!(display.get_pixel(x, y), 0);
             }
         }
