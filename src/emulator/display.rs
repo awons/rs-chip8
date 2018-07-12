@@ -9,15 +9,19 @@ const DISPLAY_HEIGHT: usize = 32;
 const SPRITE_WIDTH: u8 = 8;
 
 struct DisplayMemory {
-    memory: [u8; DISPLAY_WIDTH * DISPLAY_HEIGHT],
-    width: usize,
+    memory: [u8; DISPLAY_WIDTH * DISPLAY_HEIGHT]
 }
 
 impl DisplayMemory {
     fn new() -> Self {
         DisplayMemory {
-            memory: [0; DISPLAY_WIDTH * DISPLAY_HEIGHT],
-            width: DISPLAY_WIDTH
+            memory: [0; DISPLAY_WIDTH * DISPLAY_HEIGHT]
+        }
+    }
+
+    fn clear(&mut self) {
+        for pixel in self.memory.iter_mut() {
+            *pixel = 0;
         }
     }
 }
@@ -26,8 +30,15 @@ impl ops::Index<usize> for DisplayMemory {
     type Output = [u8];
 
     fn index(&self, row: usize) -> &[u8] {
-        let start = row * self.width;
-        &self.memory[start .. start + self.width]
+        let start = row * DISPLAY_WIDTH;
+        &self.memory[start .. start + DISPLAY_WIDTH]
+    }
+}
+
+impl ops::IndexMut<usize> for DisplayMemory {
+    fn index_mut(&mut self, row: usize) -> &mut [u8] {
+        let start = row * DISPLAY_WIDTH;
+        &mut self.memory[start .. start + DISPLAY_WIDTH]
     }
 }
 
@@ -90,7 +101,7 @@ pub trait TDisplay {
 
 impl TDisplay for Display {
     fn clear(&mut self) {
-        self.memory = [0; DISPLAY_WIDTH * DISPLAY_HEIGHT];
+        self.memory.clear();
         self.window.clear();
     }
 
@@ -99,25 +110,18 @@ impl TDisplay for Display {
 
         let mut i = 0;
         let mut data;
-        let mut memory_position;
-        for column in x..=SPRITE_WIDTH {
-            for row in y..=rows {
+        for row in y..rows {
+            for column in x..SPRITE_WIDTH {
                 data = memory.read(*address_register + i);
-                memory_position = row * column + column;
-                if self.memory[memory_position as usize] != data {
+                if self.memory[row as usize][column as usize] != data {
                     is_flipped = true;
                 }
-                self.memory[memory_position as usize] = data;
-                println!("runtime - {}:{}", memory_position, data);
+                self.memory[row as usize][column as usize] = data;
                 self.draw_on_canvas(column, row, data);
                 i += 1;
             }
         }
         self.window.refresh();
-
-        for pixel in self.memory.iter() {
-            println!("pixel: {}", pixel)
-        }
 
         is_flipped
     }
@@ -129,8 +133,8 @@ mod test_display {
     use emulator::memory::{Memory};
 
     impl Display {
-        fn get_pixel(&self, x: u8, y: u8) -> u8 {
-            self.memory[x as usize * y as usize]
+        fn get_pixel(&self, y: u8, x: u8) -> u8 {
+            self.memory[y as usize][x as usize]
         }
     }
 
@@ -143,19 +147,16 @@ mod test_display {
         }
 
         let mut display = Display::new();
-        let is_flipped = display.draw_sprite(1, 1, 3, &address_register, &memory);
+        let is_flipped = display.draw_sprite(0, 0, 3, &address_register, &memory);
         assert!(is_flipped);
 
-        for x in 0..8 {
-            for y in 0..3 {
-                println!("print - {}:{} {}", x, y, display.get_pixel(x, y));
+        for y in 0..2 {
+            for x in 0..8 {
+                assert_eq!(display.get_pixel(y, x), 1);
             }
         }
-
         for x in 0..8 {
-            for y in 0..2 {
-                assert_eq!(display.get_pixel(x, y), 1);
-            }
+            assert_eq!(display.get_pixel(2, x), 0);
         }
     }
 
@@ -168,11 +169,11 @@ mod test_display {
         }
 
         let mut display = Display::new();
-        display.draw_sprite(1, 1, 3, &address_register, &memory);
+        display.draw_sprite(0, 0, 3, &address_register, &memory);
         display.clear();
 
-        for x in 1..=8 {
-            for y in 1..=3 {
+        for y in 0..2 {
+            for x in 0..8 {
                 assert_eq!(display.get_pixel(x, y), 0);
             }
         }
