@@ -1,5 +1,6 @@
 use emulator::memory::{Memory, Stack, Registers, MEMORY_SIZE};
 use emulator::opcode_processor::{OpCode, TOpCodesProcessor};
+use emulator::display::{TDisplay, Display};
 
 const REGISTERS_NUMBER: usize = 16;
 pub const REGISTER_VF: usize = 0xf;
@@ -13,17 +14,18 @@ pub trait Chipset {
     fn next_opcode(&mut self) -> Option<OpCode>;
 }
 
-pub struct Chip8Chipset<T:TOpCodesProcessor> {
+pub struct Chip8Chipset<O:TOpCodesProcessor, D:TDisplay> {
     memory: Memory,
     registers: Registers,
     address_register: u16,
     program_counter: u16,
     stack: Stack,
-    opcode_processor: T,
+    opcode_processor: O,
+    display: D,
 }
 
-impl <T:TOpCodesProcessor> Chip8Chipset<T> {
-    pub fn new(memory: Memory, stack: Stack, registers: Registers, opcode_processor: T) -> Self {
+impl <O:TOpCodesProcessor, D:TDisplay> Chip8Chipset<O, D> {
+    pub fn new(memory: Memory, stack: Stack, registers: Registers, opcode_processor: O, display: D) -> Self {
         Self {
             memory,
             registers,
@@ -31,15 +33,16 @@ impl <T:TOpCodesProcessor> Chip8Chipset<T> {
             program_counter: PROGRAM_COUNTER_BOUNDARY,
             stack,
             opcode_processor,
+            display
         }
     }
 
-    pub fn get_opcode_processor(&self) -> &T {
+    pub fn get_opcode_processor(&self) -> &O {
         &self.opcode_processor
     }
 }
 
-impl <T:TOpCodesProcessor> Chipset for Chip8Chipset<T> {
+impl <O:TOpCodesProcessor, D:TDisplay> Chipset for Chip8Chipset<O, D> {
     fn get_memory(&self) -> &Memory {
         &self.memory
     }
@@ -48,7 +51,7 @@ impl <T:TOpCodesProcessor> Chipset for Chip8Chipset<T> {
         if let Some(opcode) = self.next_opcode() {
             match opcode.get_raw() {
                 x if x == 0x00e0 => {
-                    self.opcode_processor.clear_screen(&mut self.registers);
+                    self.opcode_processor.clear_screen(&mut self.display);
                 }
                 x if x == 0x00ee => {
                     self.opcode_processor.return_from_subroutine(&mut self.stack, &mut self.program_counter);
@@ -105,7 +108,7 @@ mod test_chipset {
         let program_data: [u8; 6] = [0x1, 0x2, 0x3, 0x4, 0x5, 0x6];
         load_data_into_memory(&mut memory, &program_data);
 
-        let mut chipset = Chip8Chipset::new(memory, stack, registers, MockedOpCodesProcessor::new());
+        let mut chipset = Chip8Chipset::new(memory, stack, registers, MockedOpCodesProcessor::new(), Display::new());
 
         let mut opcode = chipset.next_opcode().unwrap();
         assert_eq!(OpCode::from_data(0x102), opcode);
@@ -121,7 +124,7 @@ mod test_chipset {
     fn test_match_clear_screen_opcode() {
         let (mut memory, stack, registers) = create_memory();
         memory.write(PROGRAM_COUNTER_BOUNDARY + 1, 0xe0);
-        let mut chipset = Chip8Chipset::new(memory, stack, registers, MockedOpCodesProcessor::new());
+        let mut chipset = Chip8Chipset::new(memory, stack, registers, MockedOpCodesProcessor::new(), Display::new());
 
         chipset.tick();
         assert_eq!("clear_screen", chipset.get_opcode_processor().get_matched_method());
@@ -132,7 +135,7 @@ mod test_chipset {
         let (mut memory, stack, registers) = create_memory();
         memory.write(PROGRAM_COUNTER_BOUNDARY + 1, 0xee);
 
-        let mut chipset = Chip8Chipset::new(memory, stack, registers, MockedOpCodesProcessor::new());
+        let mut chipset = Chip8Chipset::new(memory, stack, registers, MockedOpCodesProcessor::new(), Display::new());
 
         chipset.tick();
         assert_eq!("return_from_subroutine", chipset.get_opcode_processor().get_matched_method());
@@ -144,7 +147,7 @@ mod test_chipset {
         memory.write(PROGRAM_COUNTER_BOUNDARY, 0x1a);
         memory.write(PROGRAM_COUNTER_BOUNDARY + 1, 0xbc);
 
-        let mut chipset = Chip8Chipset::new(memory, stack, registers, MockedOpCodesProcessor::new());
+        let mut chipset = Chip8Chipset::new(memory, stack, registers, MockedOpCodesProcessor::new(), Display::new());
 
         chipset.tick();
         assert_eq!("jump_to_address", chipset.get_opcode_processor().get_matched_method());
@@ -156,7 +159,7 @@ mod test_chipset {
         memory.write(PROGRAM_COUNTER_BOUNDARY, 0x21);
         memory.write(PROGRAM_COUNTER_BOUNDARY + 1, 0x23);
 
-        let mut chipset = Chip8Chipset::new(memory, stack, registers, MockedOpCodesProcessor::new());
+        let mut chipset = Chip8Chipset::new(memory, stack, registers, MockedOpCodesProcessor::new(), Display::new());
 
         chipset.tick();
         assert_eq!("call_subroutine", chipset.get_opcode_processor().get_matched_method());
@@ -168,7 +171,7 @@ mod test_chipset {
         memory.write(PROGRAM_COUNTER_BOUNDARY, 0x3a);
         memory.write(PROGRAM_COUNTER_BOUNDARY + 1, 0xbc);
 
-        let mut chipset = Chip8Chipset::new(memory, stack, registers, MockedOpCodesProcessor::new());
+        let mut chipset = Chip8Chipset::new(memory, stack, registers, MockedOpCodesProcessor::new(), Display::new());
 
         chipset.tick();
         assert_eq!("cond_vx_equal_nn", chipset.get_opcode_processor().get_matched_method());
@@ -180,7 +183,7 @@ mod test_chipset {
         memory.write(PROGRAM_COUNTER_BOUNDARY, 0x4a);
         memory.write(PROGRAM_COUNTER_BOUNDARY + 1, 0xbc);
 
-        let mut chipset = Chip8Chipset::new(memory, stack, registers, MockedOpCodesProcessor::new());
+        let mut chipset = Chip8Chipset::new(memory, stack, registers, MockedOpCodesProcessor::new(), Display::new());
 
         chipset.tick();
         assert_eq!("cond_vx_not_equal_nn", chipset.get_opcode_processor().get_matched_method());
@@ -192,7 +195,7 @@ mod test_chipset {
         memory.write(PROGRAM_COUNTER_BOUNDARY, 0x5a);
         memory.write(PROGRAM_COUNTER_BOUNDARY + 1, 0xa0);
 
-        let mut chipset = Chip8Chipset::new(memory, stack, registers, MockedOpCodesProcessor::new());
+        let mut chipset = Chip8Chipset::new(memory, stack, registers, MockedOpCodesProcessor::new(), Display::new());
 
         chipset.tick();
         assert_eq!("cond_vx_equal_vy", chipset.get_opcode_processor().get_matched_method());
@@ -204,7 +207,7 @@ mod test_chipset {
         memory.write(PROGRAM_COUNTER_BOUNDARY, 0x62);
         memory.write(PROGRAM_COUNTER_BOUNDARY + 1, 0x10);
 
-        let mut chipset = Chip8Chipset::new(memory, stack, registers, MockedOpCodesProcessor::new());
+        let mut chipset = Chip8Chipset::new(memory, stack, registers, MockedOpCodesProcessor::new(), Display::new());
 
         chipset.tick();
         assert_eq!("const_vx_equal_nn", chipset.get_opcode_processor().get_matched_method());
@@ -243,7 +246,7 @@ mod test_chipset {
         }
     }
     impl TOpCodesProcessor for MockedOpCodesProcessor{
-        fn clear_screen(&self, registers: &mut Registers) {
+        fn clear_screen(&self, registers: &mut TDisplay) {
             self.set_matched_method("clear_screen");
         }
         fn return_from_subroutine(&self, stack: &mut Stack, program_counter: &mut u16) {
@@ -309,7 +312,7 @@ mod test_chipset {
         fn rand_vx_equal_rand_and_nn(&self, registers: &mut Registers, x: u8, nn: u8) {
             self.set_matched_method("rand_vx_equal_rand_and_nn");
         }
-        fn draw_vx_vy_n(&self, x: u8, y: u8, n: u8) {
+        fn draw_vx_vy_n(&self, _x: u8, _y: u8, _n: u8, _display: &mut TDisplay, _memory: &Memory, _address_register: &u16) {
             self.set_matched_method("draw_vx_vy_n");
         }
         fn mem_i_equal_i_plus_vx(&self, registers: &mut Registers, address_register: &mut u16, x: u8) {

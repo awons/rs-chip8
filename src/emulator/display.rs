@@ -112,7 +112,10 @@ impl TDisplay for Display {
         let mut data;
         for row in y..rows {
             for column in x..SPRITE_WIDTH {
-                data = memory.read(*address_register + i);
+                data = match memory.read(*address_register + i) {
+                    0 => 0,
+                    _ => 1,
+                };
                 if self.memory[row as usize][column as usize] != data {
                     is_flipped = true;
                 }
@@ -139,7 +142,7 @@ mod test_display {
     }
 
     #[test]
-    fn test_draw_sprite() {
+    fn test_draw_sprite_flipped() {
         let mut memory = Memory::new();
         let address_register = 0x100;
         for address in address_register..0x110 {
@@ -158,6 +161,21 @@ mod test_display {
         for x in 0..8 {
             assert_eq!(display.get_pixel(2, x), 0);
         }
+    }
+
+    #[test]
+    fn test_draw_sprite_not_flipped() {
+        let mut memory = Memory::new();
+        let address_register = 0x100;
+        for address in address_register..0x110 {
+            memory.write(address, 1);
+        }
+
+        let mut display = Display::new();
+        display.draw_sprite(0, 0, 3, &address_register, &memory);
+        let is_flipped = display.draw_sprite(0, 0, 3, &address_register, &memory);
+
+        assert!(!is_flipped);
     }
 
     #[test]

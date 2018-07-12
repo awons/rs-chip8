@@ -1,6 +1,7 @@
 extern crate rand;
 
 use emulator::memory::{Registers, Stack, Memory};
+use emulator::display::TDisplay;
 
 #[derive(Debug, PartialEq)]
 pub struct OpCode {
@@ -46,7 +47,7 @@ impl OpCode {
 }
 
 pub trait TOpCodesProcessor {
-    fn clear_screen(&self, registers: &mut Registers);
+    fn clear_screen(&self, &mut TDisplay);
     fn return_from_subroutine(&self, stack: &mut Stack, program_counter: &mut u16);
     fn jump_to_address(&self, program_counter: &mut u16, address: u16);
     fn call_subroutine(&self, program_counter: &mut u16, address: u16, stack: &mut Stack);
@@ -68,7 +69,7 @@ pub trait TOpCodesProcessor {
     fn mem_i_equal_nnn(&self, address_register: &mut u16, nnn: u16);
     fn flow_pc_equal_v0_plus_nnn(&self, program_counter: &mut u16, nnn: u16);
     fn rand_vx_equal_rand_and_nn(&self, registers: &mut Registers, x: u8, nn: u8);
-    fn draw_vx_vy_n(&self, x: u8, y: u8, n: u8);
+    fn draw_vx_vy_n(&self, x: u8, y: u8, n: u8, display: &mut TDisplay, memory: &Memory, address_register: &u16);
     fn mem_i_equal_i_plus_vx(&self, registers: &mut Registers, address_register: &mut u16, x: u8);
     fn mem_i_equal_sprite_addr_vx(&self, registers: &Registers, address_register: &mut u16, x: u8);
     fn mem_bcd(&self, registers: &Registers, address_register: &u16, memory: &mut Memory, x: u8);
@@ -85,8 +86,8 @@ impl OpCodesProcessor {
 }
 
 impl TOpCodesProcessor for OpCodesProcessor {
-    fn clear_screen(&self, registers: &mut Registers) {
-        // TODO Change to Draw
+    fn clear_screen(&self, display: &mut TDisplay) {
+        display.clear();
     }
 
     fn return_from_subroutine(&self, stack: &mut Stack, program_counter: &mut u16) {
@@ -250,8 +251,8 @@ impl TOpCodesProcessor for OpCodesProcessor {
         registers.set_register_at(x as usize, rand::random::<u8>() & nn);
     }
 
-    fn draw_vx_vy_n(&self, x: u8, y: u8, n: u8) {
-        // TODO
+    fn draw_vx_vy_n(&self, x: u8, y: u8, n: u8, display: &mut TDisplay, memory: &Memory, address_register: &u16) {
+        display.draw_sprite(x, y, n, address_register, memory);
     }
 
     fn mem_i_equal_i_plus_vx(&self, registers: &mut Registers, address_register: &mut u16, x: u8) {
@@ -349,15 +350,41 @@ mod test_opcode {
 mod test_opcodes_processor {
     use super::*;
     use emulator::memory::{Memory, Stack, Registers};
+    use emulator::display::TDisplay;
 
-    #[test]
-    fn test_clear_graphic_memory_with_collision() {
-        // TODO
+    struct MockedDisplay {
+        draw_sprite_called: bool,
+        clear_called: bool,
+    }
+
+    impl MockedDisplay {
+        fn new() -> Self {
+            MockedDisplay {
+                draw_sprite_called: false,
+                clear_called: false,
+            }
+        }
+    }
+
+    impl TDisplay for MockedDisplay {
+        fn draw_sprite(&mut self, x: u8, y: u8, rows: u8, address_register: &u16, memory: &Memory) -> bool {
+            self.draw_sprite_called = true;
+
+            true
+        }
+
+        fn clear(&mut self) {
+            self.clear_called = true;
+        }
     }
 
     #[test]
-    fn test_clear_graphic_memory_without_collision() {
-        // TODO
+    fn test_clear_display() {
+        let mut display = MockedDisplay::new();
+
+        OpCodesProcessor::new().clear_screen(&mut display);
+
+        assert!(display.clear_called);
     }
 
     #[test]
@@ -931,5 +958,16 @@ mod test_opcodes_processor {
         for z in 0x0..x+0x1 {
             assert_eq!(0xf - z, registers.get_register_at(z as usize));
         }
+    }
+
+    #[test]
+    fn test_draw_vx_vy_n() {
+        let mut memory = Memory::new();
+        let address_register: u16 = 0x0;
+        let mut display = MockedDisplay::new();
+
+        OpCodesProcessor::new().draw_vx_vy_n(0, 0, 3, &mut display, &mut memory, &address_register);
+
+        assert!(display.draw_sprite_called);
     }
 }
