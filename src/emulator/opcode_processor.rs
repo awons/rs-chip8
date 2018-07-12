@@ -75,6 +75,12 @@ pub trait TOpCodesProcessor {
     fn mem_bcd(&self, registers: &Registers, address_register: &u16, memory: &mut Memory, x: u8);
     fn mem_reg_dump(&self, registers: &Registers, memory: &mut Memory, address_register: &mut u16, x: u8);
     fn mem_reg_load(&self, registers: &mut Registers, memory: &Memory, address_register: &mut u16, x: u8);
+    fn keyop_if_key_equal_vx(&self);
+    fn keyop_if_key_not_equal_vx(&self);
+    fn keyop_vx_equal_key(&self);
+    fn timer_vx_equal_get_delay(&self);
+    fn timer_delay_timer_equal_vx(&self);
+    fn sound_sound_timer_equal_vx(&self);
 }
 
 pub struct OpCodesProcessor {}
@@ -302,6 +308,30 @@ impl TOpCodesProcessor for OpCodesProcessor {
             registers.set_register_at(z as usize, memory.read(*address_register));
             *address_register += 1;
         }
+    }
+
+    fn keyop_if_key_equal_vx(&self) {
+        //TODO implement
+    }
+
+    fn keyop_if_key_not_equal_vx(&self) {
+        //TODO Implement
+    }
+
+    fn keyop_vx_equal_key(&self) {
+        // TODO implement
+    }
+
+    fn timer_vx_equal_get_delay(&self) {
+        //TODO Implement
+    }
+
+    fn timer_delay_timer_equal_vx(&self) {
+        //TODO Implement
+    }
+
+    fn sound_sound_timer_equal_vx(&self) {
+        //TODO Implement
     }
 }
 

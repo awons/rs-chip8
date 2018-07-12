@@ -330,5 +330,23 @@ mod test_chipset {
         fn mem_reg_load(&self, _registers: &mut Registers, _memory: &Memory, _address_register: &mut u16, _x: u8) {
             self.set_matched_method("mem_reg_load");
         }
+        fn keyop_if_key_equal_vx(&self) {
+            self.set_matched_method("keyop_if_key_equal_vx");
+        }
+        fn keyop_if_key_not_equal_vx(&self) {
+            self.set_matched_method("keyop_if_key_not_equal_vx");
+        }
+        fn keyop_vx_equal_key(&self) {
+            self.set_matched_method("keyop_vx_equal_key");
+        }
+        fn timer_vx_equal_get_delay(&self) {
+            self.set_matched_method("timer_vx_equal_get_delay");
+        }
+        fn timer_delay_timer_equal_vx(&self) {
+            self.set_matched_method("timer_delay_timer_equal_vx");
+        }
+        fn sound_sound_timer_equal_vx(&self) {
+            self.set_matched_method("sound_sound_timer_equal_vx");
+        }
     }
 }
