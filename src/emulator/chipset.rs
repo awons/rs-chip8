@@ -246,88 +246,88 @@ mod test_chipset {
         }
     }
     impl TOpCodesProcessor for MockedOpCodesProcessor{
-        fn clear_screen(&self, registers: &mut TDisplay) {
+        fn clear_screen(&self, _registers: &mut TDisplay) {
             self.set_matched_method("clear_screen");
         }
-        fn return_from_subroutine(&self, stack: &mut Stack, program_counter: &mut u16) {
+        fn return_from_subroutine(&self, _stack: &mut Stack, _program_counter: &mut u16) {
             self.set_matched_method("return_from_subroutine");
         }
-        fn jump_to_address(&self, program_counter: &mut u16, address: u16) {
+        fn jump_to_address(&self, _program_counter: &mut u16, _address: u16) {
             self.set_matched_method("jump_to_address");
         }
-        fn call_subroutine(&self, program_counter: &mut u16, address: u16, stack: &mut Stack) {
+        fn call_subroutine(&self, _program_counter: &mut u16, _address: u16, _stack: &mut Stack) {
             self.set_matched_method("call_subroutine");
         }
-        fn cond_vx_equal_nn(&self, registers: &Registers, program_counter: &mut u16, x: u8, nn: u8) {
+        fn cond_vx_equal_nn(&self, _registers: &Registers, _program_counter: &mut u16, _x: u8, _nn: u8) {
             self.set_matched_method("cond_vx_equal_nn");
         }
-        fn cond_vx_not_equal_nn(&self, registers: &Registers, program_counter: &mut u16, x: u8, nn: u8) {
+        fn cond_vx_not_equal_nn(&self, _registers: &Registers, _program_counter: &mut u16, _x: u8, _nn: u8) {
             self.set_matched_method("cond_vx_not_equal_nn");
         }
-        fn cond_vx_equal_vy(&self, registers: &Registers, program_counter: &mut u16, x: u8, y: u8) {
+        fn cond_vx_equal_vy(&self, _registers: &Registers, _program_counter: &mut u16, _x: u8, _y: u8) {
             self.set_matched_method("cond_vx_equal_vy");
         }
-        fn const_vx_equal_nn(&self, registers: &mut Registers, x: u8, nn: u8) {
+        fn const_vx_equal_nn(&self, _registers: &mut Registers, _x: u8, _nn: u8) {
             self.set_matched_method("const_vx_equal_nn");
         }
-        fn const_vx_plus_equal_nn(&self, registers: &mut Registers, x: u8, nn: u8) {
+        fn const_vx_plus_equal_nn(&self, _registers: &mut Registers, _x: u8, _nn: u8) {
             self.set_matched_method("const_vx_plus_equal_nn");
         }
-        fn assign_vx_equal_vy(&self, registers: &mut Registers, x: u8, y: u8) {
+        fn assign_vx_equal_vy(&self, _registers: &mut Registers, _x: u8, _y: u8) {
             self.set_matched_method("assign_vx_equal_vy");
         }
-        fn bitop_vx_equal_vx_or_vy(&self, registers: &mut Registers, x: u8, y: u8) {
+        fn bitop_vx_equal_vx_or_vy(&self, _registers: &mut Registers, _x: u8, _y: u8) {
             self.set_matched_method("bitop_vx_equal_vx_or_vy");
         }
-        fn bitop_vx_equal_vx_and_vy(&self, registers: &mut Registers, x: u8, y: u8) {
+        fn bitop_vx_equal_vx_and_vy(&self, _registers: &mut Registers, _x: u8, _y: u8) {
             self.set_matched_method("bitop_vx_equal_vx_and_vy");
         }
-        fn bitop_vx_equal_vx_xor_vy(&self, registers: &mut Registers, x: u8, y: u8) {
+        fn bitop_vx_equal_vx_xor_vy(&self, _registers: &mut Registers, _x: u8, _y: u8) {
             self.set_matched_method("bitop_vx_equal_vx_xor_vy");
         }
-        fn math_vx_equal_vx_plus_vy(&self, registers: &mut Registers, x: u8, y: u8) {
+        fn math_vx_equal_vx_plus_vy(&self, _registers: &mut Registers, _x: u8, _y: u8) {
             self.set_matched_method("math_vx_equal_vx_plus_vy");
         }
-        fn math_vx_equal_vx_minus_vy(&self, registers: &mut Registers, x: u8, y: u8) {
+        fn math_vx_equal_vx_minus_vy(&self, _registers: &mut Registers, _x: u8, _y: u8) {
             self.set_matched_method("math_vx_equal_vx_minus_vy");
         }
-        fn bitop_vx_equal_vy_shr(&self, registers: &mut Registers, x: u8, y: u8) {
+        fn bitop_vx_equal_vy_shr(&self, _registers: &mut Registers, _x: u8, _y: u8) {
             self.set_matched_method("bitop_vx_equal_vy_shr");
         }
-        fn math_vx_equal_vy_minus_vx(&self, registers: &mut Registers, x: u8, y: u8) {
+        fn math_vx_equal_vy_minus_vx(&self, _registers: &mut Registers, _x: u8, _y: u8) {
             self.set_matched_method("math_vx_equal_vy_minus_vx");
         }
-        fn bitop_vx_equal_vy_shl(&self, registers: &mut Registers, x: u8, y: u8) {
+        fn bitop_vx_equal_vy_shl(&self, _registers: &mut Registers, _x: u8, _y: u8) {
             self.set_matched_method("bitop_vx_equal_vy_shl");
         }
-        fn cond_vx_not_equal_vy(&self, registers: &Registers, program_counter: &mut u16, x: u8, y: u8) {
+        fn cond_vx_not_equal_vy(&self, _registers: &Registers, _program_counter: &mut u16, _x: u8, _y: u8) {
             self.set_matched_method("cond_vx_not_equal_vy");
         }
-        fn mem_i_equal_nnn(&self, address_register: &mut u16, nnn: u16) {
+        fn mem_i_equal_nnn(&self, _address_register: &mut u16, _nnn: u16) {
             self.set_matched_method("mem_i_equal_nnn");
         }
-        fn flow_pc_equal_v0_plus_nnn(&self, program_counter: &mut u16, nnn: u16) {
+        fn flow_pc_equal_v0_plus_nnn(&self, _program_counter: &mut u16, _nnn: u16) {
             self.set_matched_method("flow_pc_equal_v0_plus_nnn");
         }
-        fn rand_vx_equal_rand_and_nn(&self, registers: &mut Registers, x: u8, nn: u8) {
+        fn rand_vx_equal_rand_and_nn(&self, _registers: &mut Registers, _x: u8, _nn: u8) {
             self.set_matched_method("rand_vx_equal_rand_and_nn");
         }
         fn draw_vx_vy_n(&self, _x: u8, _y: u8, _n: u8, _display: &mut TDisplay, _memory: &Memory, _address_register: &u16) {
             self.set_matched_method("draw_vx_vy_n");
         }
-        fn mem_i_equal_i_plus_vx(&self, registers: &mut Registers, address_register: &mut u16, x: u8) {
+        fn mem_i_equal_i_plus_vx(&self, _registers: &mut Registers, _address_register: &mut u16, _x: u8) {
             self.set_matched_method("mem_i_equal_i_plus_vx");
         }
-        fn mem_i_equal_sprite_addr_vx(&self, registers: &Registers, address_register: &mut u16, x:u8) {
+        fn mem_i_equal_sprite_addr_vx(&self, _registers: &Registers, _address_register: &mut u16, _x:u8) {
             self.set_matched_method("mem_i_equal_sprite_addr_vx");
         }
-        fn mem_bcd(&self, registers: &Registers, address_register: &u16, memory: &mut Memory, x: u8) {
+        fn mem_bcd(&self, _registers: &Registers, _address_register: &u16, _memory: &mut Memory, _x: u8) {
             self.set_matched_method("mem_bcd");
         }
-        fn mem_reg_dump(&self, registers: &Registers, memory: &mut Memory, address_register: &mut u16, x: u8) {
+        fn mem_reg_dump(&self, _registers: &Registers, _memory: &mut Memory, _address_register: &mut u16, _x: u8) {
             self.set_matched_method("mem_reg_dump");
         }
-        fn mem_reg_load(&self, registers: &mut Registers, memory: &Memory, address_register: &mut u16, x: u8) {
+        fn mem_reg_load(&self, _registers: &mut Registers, _memory: &Memory, _address_register: &mut u16, _x: u8) {
             self.set_matched_method("mem_reg_load");
         }
     }
