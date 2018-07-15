@@ -8,6 +8,7 @@ use self::chipset::{Chipset, Chip8Chipset, PROGRAM_COUNTER_BOUNDARY};
 use self::memory::{Memory, Stack, Registers};
 use self::opcode_processor::OpCodesProcessor;
 use self::display::Display;
+use self::keyboard::Keyboard;
 
 pub struct Emulator {
     memory: Memory,
@@ -22,7 +23,16 @@ impl Emulator {
         self.load_program(data);
 
         InitializedEmulator {
-            chipset: Box::new(Chip8Chipset::new(self.memory, self.stack, self.registers, OpCodesProcessor::new(), Display::new()))
+            chipset: Box::new(
+                Chip8Chipset::new(
+                    self.memory,
+                    self.stack,
+                    self.registers,
+                    OpCodesProcessor::new(),
+                    Display::new(),
+                    Keyboard::new()
+                )
+            )
         }
     }
 
