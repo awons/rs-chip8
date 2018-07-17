@@ -2,6 +2,7 @@ extern crate rand;
 
 use emulator::memory::{Registers, Stack, Memory};
 use emulator::display::TDisplay;
+use emulator::keyboard::TKeyboard;
 
 #[derive(Debug, PartialEq)]
 pub struct OpCode {
@@ -75,9 +76,9 @@ pub trait TOpCodesProcessor {
     fn mem_bcd(&self, registers: &Registers, address_register: &u16, memory: &mut Memory, x: u8);
     fn mem_reg_dump(&self, registers: &Registers, memory: &mut Memory, address_register: &mut u16, x: u8);
     fn mem_reg_load(&self, registers: &mut Registers, memory: &Memory, address_register: &mut u16, x: u8);
-    fn keyop_if_key_equal_vx(&self);
-    fn keyop_if_key_not_equal_vx(&self);
-    fn keyop_vx_equal_key(&self);
+    fn keyop_if_key_equal_vx(&self, keyboard: &mut TKeyboard, registers: &Registers, program_counter: &mut u16, x: u8);
+    fn keyop_if_key_not_equal_vx(&self, keyboard: &mut TKeyboard, registers: &Registers, program_counter: &mut u16, x: u8);
+    fn keyop_vx_equal_key(&self, keyboard: &mut TKeyboard, registers: &mut Registers, x: u8);
     fn timer_vx_equal_get_delay(&self);
     fn timer_delay_timer_equal_vx(&self);
     fn sound_sound_timer_equal_vx(&self);
@@ -259,6 +260,7 @@ impl TOpCodesProcessor for OpCodesProcessor {
 
     fn draw_vx_vy_n(&self, x: u8, y: u8, n: u8, display: &mut TDisplay, memory: &Memory, address_register: &u16) {
         display.draw_sprite(x, y, n, address_register, memory);
+        // set pixel collision
     }
 
     fn mem_i_equal_i_plus_vx(&self, registers: &mut Registers, address_register: &mut u16, x: u8) {
@@ -310,16 +312,31 @@ impl TOpCodesProcessor for OpCodesProcessor {
         }
     }
 
-    fn keyop_if_key_equal_vx(&self) {
-        //TODO implement
+    fn keyop_if_key_equal_vx(&self, keyboard: &mut TKeyboard, registers: &Registers, program_counter: &mut u16, x: u8) {
+        match keyboard.get_pressed_key() {
+            Some(key) => {
+                if registers.get_register_at(x as usize) == key as u8 {
+                    *program_counter += 2;
+                }        
+            },
+            _ => {}
+        };
     }
 
-    fn keyop_if_key_not_equal_vx(&self) {
-        //TODO Implement
+    fn keyop_if_key_not_equal_vx(&self, keyboard: &mut TKeyboard, registers: &Registers, program_counter: &mut u16, x: u8) {
+        match keyboard.get_pressed_key() {
+            Some(key) => {
+                if registers.get_register_at(x as usize) != key as u8 {
+                    *program_counter += 2;
+                }        
+            },
+            _ => {}
+        };
     }
 
-    fn keyop_vx_equal_key(&self) {
-        // TODO implement
+    fn keyop_vx_equal_key(&self, keyboard: &mut TKeyboard, registers: &mut Registers, x: u8) {
+        let key = keyboard.wait_for_key_press();
+        registers.set_register_at(x as usize, key as u8);
     }
 
     fn timer_vx_equal_get_delay(&self) {
@@ -381,6 +398,7 @@ mod test_opcodes_processor {
     use super::*;
     use emulator::memory::{Memory, Stack, Registers};
     use emulator::display::TDisplay;
+    use emulator::keyboard::{TKeyboard, Key};
 
     struct MockedDisplay {
         draw_sprite_called: bool,
@@ -397,7 +415,7 @@ mod test_opcodes_processor {
     }
 
     impl TDisplay for MockedDisplay {
-        fn draw_sprite(&mut self, x: u8, y: u8, rows: u8, address_register: &u16, memory: &Memory) -> bool {
+        fn draw_sprite(&mut self, _x: u8, _y: u8, _rows: u8, _address_register: &u16, _memory: &Memory) -> bool {
             self.draw_sprite_called = true;
 
             true
@@ -405,6 +423,17 @@ mod test_opcodes_processor {
 
         fn clear(&mut self) {
             self.clear_called = true;
+        }
+    }
+
+    struct MockedKeyboard;
+    impl TKeyboard for MockedKeyboard {
+        fn wait_for_key_press(&mut self) -> Key {
+            Key::Key5
+        }
+
+        fn get_pressed_key(&mut self) -> Option<Key> {
+            Some(Key::Key4)
         }
     }
 
@@ -999,5 +1028,41 @@ mod test_opcodes_processor {
         OpCodesProcessor::new().draw_vx_vy_n(0, 0, 3, &mut display, &mut memory, &address_register);
 
         assert!(display.draw_sprite_called);
+    }
+
+    #[test]
+    fn test_keyop_vx_equal_key() {
+        let mut keyboard = MockedKeyboard{};
+        let mut registers = Registers::new();
+
+        OpCodesProcessor::new().keyop_vx_equal_key(&mut keyboard, &mut registers, 0xa);
+
+        assert_eq!(53, registers.get_register_at(0xa));
+    }
+
+    #[test]
+    fn test_keyop_if_key_equal_vx() {
+        let mut keyboard = MockedKeyboard{};
+        let mut registers = Registers::new();
+        let mut program_counter = 0x0;
+
+        registers.set_register_at(0xa, 52);
+
+        OpCodesProcessor::new().keyop_if_key_equal_vx(&mut keyboard, &mut registers, &mut program_counter, 0xa);
+
+        assert_eq!(0x2, program_counter);
+    }
+
+    #[test]
+    fn test_keyop_if_key_not_equal_vx() {
+        let mut keyboard = MockedKeyboard{};
+        let mut registers = Registers::new();
+        let mut program_counter = 0x0;
+
+        registers.set_register_at(0xa, 55);
+
+        OpCodesProcessor::new().keyop_if_key_equal_vx(&mut keyboard, &mut registers, &mut program_counter, 0xa);
+
+        assert_eq!(0x0, program_counter);
     }
 }

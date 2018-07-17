@@ -9,13 +9,12 @@ use mio::unix::EventedFd;
 use libc::{c_void, read};
 
 pub struct Keyboard {
-    last_key: Option<Key>,
     poll: Poll,
     events: Events,
     key_buffer: [u8; 1],
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum Key {
     Key0 = 48,
     Key1 = 49,
@@ -47,7 +46,6 @@ impl Keyboard {
         poll.register(&ev_fd, Token(0), Ready::readable(), PollOpt::edge()).unwrap();
 
         Keyboard {
-            last_key: None,
             poll,
             events: Events::with_capacity(1),
             key_buffer: [0; 1],
@@ -84,27 +82,35 @@ impl Keyboard {
             },
         }
     }
+
+    fn poll_key_events(&mut self) -> Option<Key> {
+        let mut key: Option<Key> = None;
+        self.poll.poll(&mut self.events, None).unwrap();
+        for event in self.events.iter() {
+            if let Token(0) = event.token() {
+                key = Keyboard::read_key(&mut self.key_buffer);
+            }
+        }
+
+        key
+    }
 }
 
 pub trait TKeyboard {
-    fn wait_for_key_press(&mut self);
-    fn get_pressed_key(&self) -> &Option<Key>;
+    fn wait_for_key_press(&mut self) -> Key;
+    fn get_pressed_key(&mut self) -> Option<Key>;
 }
 
 impl TKeyboard for Keyboard {
-    fn wait_for_key_press(&mut self) {
+    fn wait_for_key_press(&mut self) -> Key {
         loop {
-            self.poll.poll(&mut self.events, None).unwrap();
-            for event in self.events.iter() {
-                if let Token(0) = event.token() {
-                    self.last_key = Keyboard::read_key(&mut self.key_buffer);
-                    println!("pressed key: {:?}", self.last_key);
-                }
+            if let Some(key) = self.poll_key_events() {
+                return key;    
             }
         }
     }
 
-    fn get_pressed_key(&self) -> &Option<Key> {
-        &self.last_key
+    fn get_pressed_key(&mut self) -> Option<Key> {
+        self.poll_key_events()
     }
 }

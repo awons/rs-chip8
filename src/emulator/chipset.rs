@@ -335,13 +335,13 @@ mod test_chipset {
         fn mem_reg_load(&self, _registers: &mut Registers, _memory: &Memory, _address_register: &mut u16, _x: u8) {
             self.set_matched_method("mem_reg_load");
         }
-        fn keyop_if_key_equal_vx(&self) {
+        fn keyop_if_key_equal_vx(&self, keyboard: &mut TKeyboard, registers: &Registers, program_counter: &mut u16, x: u8) {
             self.set_matched_method("keyop_if_key_equal_vx");
         }
-        fn keyop_if_key_not_equal_vx(&self) {
+        fn keyop_if_key_not_equal_vx(&self, keyboard: &mut TKeyboard, registers: &Registers, program_counter: &mut u16, x: u8) {
             self.set_matched_method("keyop_if_key_not_equal_vx");
         }
-        fn keyop_vx_equal_key(&self) {
+        fn keyop_vx_equal_key(&self, _keyboard: &mut TKeyboard, _registers: &mut Registers, _x: u8) {
             self.set_matched_method("keyop_vx_equal_key");
         }
         fn timer_vx_equal_get_delay(&self) {
