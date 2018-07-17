@@ -29,10 +29,6 @@ impl OpCode {
         }
     }
 
-    pub fn get_raw(&self) -> u16 {
-        self.opcode
-    }
-
     pub fn get_parts(&self) -> (u8, u8, u8, u8) {
         (((self.opcode & 0xf000) >> 12) as u8, self.x, self.y, self.n)
     }
@@ -378,13 +374,6 @@ mod test_opcode {
         let opcode = OpCode::from_data(0x1456);
 
         assert_eq!((0x1, 0x4, 0x5, 0x6), opcode.get_parts());
-    }
-
-    #[test]
-    fn test_get_raw() {
-        let opcode = OpCode::from_data(0x1456);
-
-        assert_eq!(0x1456, opcode.get_raw());
     }
 
     #[test]
