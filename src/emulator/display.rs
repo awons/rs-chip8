@@ -130,7 +130,7 @@ impl TDisplay for Display {
     }
 }
 
-#[cfg(test)]
+//#[cfg(test)]
 mod test_display {
     use super::{Display, TDisplay};
     use emulator::memory::{Memory};

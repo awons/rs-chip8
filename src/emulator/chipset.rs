@@ -56,34 +56,34 @@ impl <O:TOpCodesProcessor, D:TDisplay, K:TKeyboard> Chipset for Chip8Chipset<O, 
 
     fn tick(&mut self) {
         if let Some(opcode) = self.next_opcode() {
-            match opcode.get_raw() {
-                x if x == 0x00e0 => {
+            match opcode.get_parts() {
+                (0x0, 0x0, 0xe, 0x0) => {
                     self.opcode_processor.clear_screen(&mut self.display);
                 }
-                x if x == 0x00ee => {
+                (0x0, 0x0, 0xe, 0xe) => {
                     self.opcode_processor.return_from_subroutine(&mut self.stack, &mut self.program_counter);
                 }
-                x if (x & 0xf000) == 0x1000 => {
+                (0x1, _, _, _) => {
                     self.opcode_processor.jump_to_address(&mut self.program_counter, opcode.get_address());
                 }
-                x if (x & 0xf000) == 0x2000 => {
+                (0x2, _, _, _) => {
                     self.opcode_processor.call_subroutine(&mut self.program_counter, opcode.get_address(), &mut self.stack);
                 }
-                x if (x & 0xf000) == 0x3000 => {
+                (0x3, _, _, _) => {
                     self.opcode_processor.cond_vx_equal_nn(&self.registers, &mut self.program_counter, opcode.get_x(), opcode.get_short_address());
                 }
-                x if (x & 0xf000) == 0x4000 => {
+                (0x4, _, _, _) => {
                     self.opcode_processor.cond_vx_not_equal_nn(&self.registers, &mut self.program_counter, opcode.get_x(), opcode.get_short_address());
                 }
-                x if (x & 0xf00f) == 0x5000 => {
+                (0x5, _, _, 0x0) => {
                     self.opcode_processor.cond_vx_equal_vy(&self.registers, &mut self.program_counter, opcode.get_x(), opcode.get_short_address());
                 }
-                x if (x & 0xf000) == 0x6000 => {
+                (0x6, _, _, _) => {
                     self.opcode_processor.const_vx_equal_nn(&mut self.registers, opcode.get_x(), opcode.get_short_address());
                 }
-                //Add missing matches
-                x => {
-                    panic!("Unknown opcode: {}", x);
+                // TODO implement rest
+                _ => {
+                    panic!("Unknown opcode {:#x}", opcode);
                 }
             }
         };

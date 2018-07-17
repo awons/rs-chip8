@@ -4,6 +4,9 @@ use emulator::memory::{Registers, Stack, Memory};
 use emulator::display::TDisplay;
 use emulator::keyboard::TKeyboard;
 
+use std::fmt;
+use std::result;
+
 #[derive(Debug, PartialEq)]
 pub struct OpCode {
     opcode: u16,
@@ -30,6 +33,10 @@ impl OpCode {
         self.opcode
     }
 
+    pub fn get_parts(&self) -> (u8, u8, u8, u8) {
+        (((self.opcode & 0xf000) >> 12) as u8, self.x, self.y, self.n)
+    }
+
     pub fn get_address(&self) -> u16 {
         self.nnn
     }
@@ -44,6 +51,15 @@ impl OpCode {
 
     pub fn get_short_address(&self) -> u8 {
         self.nn
+    }
+}
+
+impl fmt::LowerHex for OpCode {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> result::Result<(), fmt::Error> {
+        let string = format!("{:#06x}", self.opcode);
+        formatter.write_str(&string)?;
+        
+        Ok(())
     }
 }
 
@@ -356,6 +372,13 @@ impl TOpCodesProcessor for OpCodesProcessor {
 #[cfg(test)]
 mod test_opcode {
     use super::OpCode;
+
+    #[test]
+    fn test_get_parts() {
+        let opcode = OpCode::from_data(0x1456);
+
+        assert_eq!((0x1, 0x4, 0x5, 0x6), opcode.get_parts());
+    }
 
     #[test]
     fn test_get_raw() {
