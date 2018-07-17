@@ -70,7 +70,7 @@ pub trait TOpCodesProcessor {
     fn mem_i_equal_nnn(&self, address_register: &mut u16, nnn: u16);
     fn flow_pc_equal_v0_plus_nnn(&self, program_counter: &mut u16, nnn: u16);
     fn rand_vx_equal_rand_and_nn(&self, registers: &mut Registers, x: u8, nn: u8);
-    fn draw_vx_vy_n(&self, x: u8, y: u8, n: u8, display: &mut TDisplay, memory: &Memory, address_register: &u16);
+    fn draw_vx_vy_n(&self, x: u8, y: u8, n: u8, display: &mut TDisplay, memory: &Memory, address_register: &u16, registers: &mut Registers);
     fn mem_i_equal_i_plus_vx(&self, registers: &mut Registers, address_register: &mut u16, x: u8);
     fn mem_i_equal_sprite_addr_vx(&self, registers: &Registers, address_register: &mut u16, x: u8);
     fn mem_bcd(&self, registers: &Registers, address_register: &u16, memory: &mut Memory, x: u8);
@@ -258,9 +258,9 @@ impl TOpCodesProcessor for OpCodesProcessor {
         registers.set_register_at(x as usize, rand::random::<u8>() & nn);
     }
 
-    fn draw_vx_vy_n(&self, x: u8, y: u8, n: u8, display: &mut TDisplay, memory: &Memory, address_register: &u16) {
-        display.draw_sprite(x, y, n, address_register, memory);
-        // set pixel collision
+    fn draw_vx_vy_n(&self, x: u8, y: u8, n: u8, display: &mut TDisplay, memory: &Memory, address_register: &u16, registers: &mut Registers) {
+        let collision_detected = display.draw_sprite(x, y, n, address_register, memory);
+        registers.set_register_at(0xf, collision_detected as u8);
     }
 
     fn mem_i_equal_i_plus_vx(&self, registers: &mut Registers, address_register: &mut u16, x: u8) {
@@ -415,10 +415,14 @@ mod test_opcodes_processor {
     }
 
     impl TDisplay for MockedDisplay {
-        fn draw_sprite(&mut self, _x: u8, _y: u8, _rows: u8, _address_register: &u16, _memory: &Memory) -> bool {
+        fn draw_sprite(&mut self, x: u8, _y: u8, _rows: u8, _address_register: &u16, _memory: &Memory) -> bool {
             self.draw_sprite_called = true;
 
-            true
+            if x == 0 {
+                false
+            } else {
+                true
+            }
         }
 
         fn clear(&mut self) {
@@ -1020,14 +1024,29 @@ mod test_opcodes_processor {
     }
 
     #[test]
-    fn test_draw_vx_vy_n() {
+    fn test_draw_vx_vy_n_without_collision() {
         let mut memory = Memory::new();
         let address_register: u16 = 0x0;
         let mut display = MockedDisplay::new();
+        let mut registers = Registers::new();
 
-        OpCodesProcessor::new().draw_vx_vy_n(0, 0, 3, &mut display, &mut memory, &address_register);
+        OpCodesProcessor::new().draw_vx_vy_n(0, 0, 3, &mut display, &mut memory, &address_register, &mut registers);
 
         assert!(display.draw_sprite_called);
+        assert_eq!(0x0, registers.get_register_at(0xf));
+    }
+
+    #[test]
+    fn test_draw_vx_vy_n_with_collision() {
+        let mut memory = Memory::new();
+        let address_register: u16 = 0x0;
+        let mut display = MockedDisplay::new();
+        let mut registers = Registers::new();
+
+        OpCodesProcessor::new().draw_vx_vy_n(1, 0, 3, &mut display, &mut memory, &address_register, &mut registers);
+
+        assert!(display.draw_sprite_called);
+        assert_eq!(0x1, registers.get_register_at(0xf));
     }
 
     #[test]

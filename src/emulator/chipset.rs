@@ -317,7 +317,7 @@ mod test_chipset {
         fn rand_vx_equal_rand_and_nn(&self, _registers: &mut Registers, _x: u8, _nn: u8) {
             self.set_matched_method("rand_vx_equal_rand_and_nn");
         }
-        fn draw_vx_vy_n(&self, _x: u8, _y: u8, _n: u8, _display: &mut TDisplay, _memory: &Memory, _address_register: &u16) {
+        fn draw_vx_vy_n(&self, _x: u8, _y: u8, _n: u8, _display: &mut TDisplay, _memory: &Memory, _address_register: &u16, registers: &mut Registers) {
             self.set_matched_method("draw_vx_vy_n");
         }
         fn mem_i_equal_i_plus_vx(&self, _registers: &mut Registers, _address_register: &mut u16, _x: u8) {
