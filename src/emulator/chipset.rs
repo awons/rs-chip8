@@ -23,7 +23,9 @@ pub struct Chip8Chipset<O:TOpCodesProcessor, D:TDisplay, K:TKeyboard> {
     stack: Stack,
     opcode_processor: O,
     display: D,
-    keyboard: K
+    keyboard: K,
+    delay_timer: u8,
+    sound_timer: u8,
 }
 
 impl <O:TOpCodesProcessor, D:TDisplay, K:TKeyboard> Chip8Chipset<O, D, K> {
@@ -36,7 +38,9 @@ impl <O:TOpCodesProcessor, D:TDisplay, K:TKeyboard> Chip8Chipset<O, D, K> {
             stack,
             opcode_processor,
             display,
-            keyboard
+            keyboard,
+            delay_timer: 0,
+            sound_timer: 0
         }
     }
 
@@ -344,10 +348,10 @@ mod test_chipset {
         fn keyop_vx_equal_key(&self, _keyboard: &mut TKeyboard, _registers: &mut Registers, _x: u8) {
             self.set_matched_method("keyop_vx_equal_key");
         }
-        fn timer_vx_equal_get_delay(&self) {
+        fn timer_vx_equal_get_delay(&self, _delay_timer: &u8, _registers: &mut Registers, _x: u8) {
             self.set_matched_method("timer_vx_equal_get_delay");
         }
-        fn timer_delay_timer_equal_vx(&self) {
+        fn timer_delay_timer_equal_vx(&self, delay_timer: &mut u8, registers: &Registers, x: u8) {
             self.set_matched_method("timer_delay_timer_equal_vx");
         }
         fn sound_sound_timer_equal_vx(&self) {

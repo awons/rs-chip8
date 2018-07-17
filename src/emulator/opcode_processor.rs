@@ -79,8 +79,8 @@ pub trait TOpCodesProcessor {
     fn keyop_if_key_equal_vx(&self, keyboard: &mut TKeyboard, registers: &Registers, program_counter: &mut u16, x: u8);
     fn keyop_if_key_not_equal_vx(&self, keyboard: &mut TKeyboard, registers: &Registers, program_counter: &mut u16, x: u8);
     fn keyop_vx_equal_key(&self, keyboard: &mut TKeyboard, registers: &mut Registers, x: u8);
-    fn timer_vx_equal_get_delay(&self);
-    fn timer_delay_timer_equal_vx(&self);
+    fn timer_vx_equal_get_delay(&self, delay_timer: &u8, registers: &mut Registers, x: u8);
+    fn timer_delay_timer_equal_vx(&self, delay_timer: &mut u8, registers: &Registers, x: u8);
     fn sound_sound_timer_equal_vx(&self);
 }
 
@@ -339,12 +339,12 @@ impl TOpCodesProcessor for OpCodesProcessor {
         registers.set_register_at(x as usize, key as u8);
     }
 
-    fn timer_vx_equal_get_delay(&self) {
-        //TODO Implement
+    fn timer_vx_equal_get_delay(&self, delay_timer: &u8, registers: &mut Registers, x: u8) {
+        registers.set_register_at(x as usize, *delay_timer);
     }
 
-    fn timer_delay_timer_equal_vx(&self) {
-        //TODO Implement
+    fn timer_delay_timer_equal_vx(&self, delay_timer: &mut u8, registers: &Registers, x: u8) {
+        *delay_timer = registers.get_register_at(x as usize);
     }
 
     fn sound_sound_timer_equal_vx(&self) {
@@ -1083,5 +1083,27 @@ mod test_opcodes_processor {
         OpCodesProcessor::new().keyop_if_key_equal_vx(&mut keyboard, &mut registers, &mut program_counter, 0xa);
 
         assert_eq!(0x0, program_counter);
+    }
+
+    #[test]
+    fn test_timer_vx_equal_get_delay() {
+        let delay_timer = 0x20;
+        let mut registers = Registers::new();
+
+        OpCodesProcessor::new().timer_vx_equal_get_delay(&delay_timer, &mut registers, 0xa);
+
+        assert_eq!(0x20, registers.get_register_at(0xa));
+    }
+
+    #[test]
+    fn test_timer_delay_timer_equal_vx() {
+        let mut delay_timer = 0x20;
+        let mut registers = Registers::new();
+
+        registers.set_register_at(0xa, 0x30);
+
+        OpCodesProcessor::new().timer_delay_timer_equal_vx(&mut delay_timer, &registers, 0xa);
+
+        assert_eq!(0x30, delay_timer);
     }
 }
