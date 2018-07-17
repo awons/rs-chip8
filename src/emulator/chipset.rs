@@ -96,6 +96,36 @@ impl <O:TOpCodesProcessor, D:TDisplay, K:TKeyboard> Chipset for Chip8Chipset<O, 
                 (0x8, _, _, 0x3) => {
                     self.opcode_processor.bitop_vx_equal_vx_xor_vy(&mut self.registers, opcode.get_x(), opcode.get_y());
                 }
+                (0x8, _, _, 0x4) => {
+                    self.opcode_processor.math_vx_equal_vx_plus_vy(&mut self.registers, opcode.get_x(), opcode.get_y());
+                }
+                (0x8, _, _, 0x5) => {
+                    self.opcode_processor.math_vx_equal_vx_minus_vy(&mut self.registers, opcode.get_x(), opcode.get_y());
+                }
+                (0x8, _, _, 0x6) => {
+                    self.opcode_processor.bitop_vx_equal_vy_shr(&mut self.registers, opcode.get_x(), opcode.get_y());
+                }
+                (0x8, _, _, 0x7) => {
+                    self.opcode_processor.math_vx_equal_vy_minus_vx(&mut self.registers, opcode.get_x(), opcode.get_y());
+                }
+                (0x8, _, _, 0xe) => {
+                    self.opcode_processor.bitop_vx_equal_vy_shl(&mut self.registers, opcode.get_x(), opcode.get_y());
+                }
+                (0x9, _, _, 0x0) => {
+                    self.opcode_processor.cond_vx_not_equal_vy(&mut self.registers, &mut self.program_counter, opcode.get_x(), opcode.get_y());
+                }
+                (0xa, _, _, _) => {
+                    self.opcode_processor.mem_i_equal_nnn(&mut self.address_register, opcode.get_address());
+                }
+                (0xb, _, _, _) => {
+                    self.opcode_processor.flow_pc_equal_v0_plus_nnn(&mut self.program_counter, opcode.get_address());
+                }
+                (0xc, _, _, _) => {
+                    self.opcode_processor.rand_vx_equal_rand_and_nn(&mut self.registers, opcode.get_x(), opcode.get_short_address());
+                },
+                (0xd, _, _, _) => {
+                    self.opcode_processor.draw_vx_vy_n(opcode.get_x(), opcode.get_y(), opcode.get_n(), &mut self.display, &self.memory, &self.address_register, &mut self.registers);
+                }
                 // TODO implement rest
                 _ => {
                     panic!("Unknown opcode {:#x}", opcode);
@@ -160,6 +190,17 @@ mod test_chipset {
         opcodes.push(("bitop_vx_equal_vx_or_vy", 0x8211));
         opcodes.push(("bitop_vx_equal_vx_and_vy", 0x8212));
         opcodes.push(("bitop_vx_equal_vx_xor_vy", 0x8213));
+        opcodes.push(("math_vx_equal_vx_plus_vy", 0x8214));
+        opcodes.push(("math_vx_equal_vx_minus_vy", 0x8215));
+        opcodes.push(("bitop_vx_equal_vy_shr", 0x8216));
+        opcodes.push(("math_vx_equal_vy_minus_vx", 0x8217));
+        opcodes.push(("bitop_vx_equal_vy_shl", 0x821e));
+        opcodes.push(("cond_vx_not_equal_vy", 0x9120));
+        opcodes.push(("mem_i_equal_nnn", 0xa123));
+        opcodes.push(("flow_pc_equal_v0_plus_nnn", 0xb123));
+        opcodes.push(("rand_vx_equal_rand_and_nn", 0xc123));
+        opcodes.push(("draw_vx_vy_n", 0xd123));
+        
 
         opcodes
     }

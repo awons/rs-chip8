@@ -48,6 +48,10 @@ impl OpCode {
     pub fn get_short_address(&self) -> u8 {
         self.nn
     }
+
+    pub fn get_n(&self) -> u8 {
+        self.n
+    }
 }
 
 impl fmt::LowerHex for OpCode {
@@ -402,6 +406,13 @@ mod test_opcode {
         let opcode = OpCode::from_data(0x1456);
 
         assert_eq!(0x5, opcode.get_y());
+    }
+
+    #[test]
+    fn test_get_n() {
+        let opcode = OpCode::from_data(0x1456);
+
+        assert_eq!(0x6, opcode.get_y());
     }
 }
 
