@@ -126,7 +126,39 @@ impl <O:TOpCodesProcessor, D:TDisplay, K:TKeyboard> Chipset for Chip8Chipset<O, 
                 (0xd, _, _, _) => {
                     self.opcode_processor.draw_vx_vy_n(opcode.get_x(), opcode.get_y(), opcode.get_n(), &mut self.display, &self.memory, &self.address_register, &mut self.registers);
                 }
-                // TODO implement rest
+                (0xe, _, 0x9, 0xe) => {
+                    self.opcode_processor.keyop_if_key_equal_vx(&mut self.keyboard, &self.registers, &mut self.program_counter, opcode.get_x());
+                }
+                (0xe, _, 0xa, 0x1) => {
+                    self.opcode_processor.keyop_if_key_not_equal_vx(&mut self.keyboard, &self.registers, &mut self.program_counter, opcode.get_x());
+                },
+                (0xf, _, 0x0, 0x7) => {
+                    self.opcode_processor.timer_vx_equal_get_delay(&self.delay_timer, &mut self.registers, opcode.get_x());
+                }
+                (0xf, _, 0x0, 0xa) => {
+                    self.opcode_processor.keyop_vx_equal_key(&mut self.keyboard, &mut self.registers, opcode.get_x());
+                }
+                (0xf, _, 0x1, 0x5) => {
+                    self.opcode_processor.timer_delay_timer_equal_vx(&mut self.delay_timer, &self.registers, opcode.get_x());
+                }
+                (0xf, _, 0x1, 0x8) => {
+                    self.opcode_processor.sound_sound_timer_equal_vx();
+                },
+                (0xf, _, 0x1, 0xe) => {
+                    self.opcode_processor.mem_i_equal_i_plus_vx(&mut self.registers,&mut self.address_register, opcode.get_x());
+                }
+                (0xf, _, 0x2, 0x9) => {
+                    self.opcode_processor.mem_i_equal_sprite_addr_vx(&self.registers, &mut self.address_register, opcode.get_x());
+                }
+                (0xf, _, 0x3, 0x3) => {
+                    self.opcode_processor.mem_bcd(&self.registers, &self.address_register, &mut self.memory, opcode.get_x());
+                }
+                (0xf, _, 0x5, 0x5) => {
+                    self.opcode_processor.mem_reg_dump(&self.registers, &mut self.memory, &mut self.address_register, opcode.get_x());
+                }
+                (0xf, _, 0x6, 0x5) => {
+                    self.opcode_processor.mem_reg_load(&mut self.registers, &self.memory, &mut self.address_register, opcode.get_x());
+                }
                 _ => {
                     panic!("Unknown opcode {:#x}", opcode);
                 }
@@ -175,7 +207,7 @@ mod test_chipset {
     }
 
     fn get_opcodes() -> Vec<(&'static str, u16)> {
-        let mut opcodes = Vec::with_capacity(32);
+        let mut opcodes = Vec::with_capacity(34);
 
         opcodes.push(("clear_screen", 0x00e0));
         opcodes.push(("return_from_subroutine", 0x00ee));
@@ -200,8 +232,18 @@ mod test_chipset {
         opcodes.push(("flow_pc_equal_v0_plus_nnn", 0xb123));
         opcodes.push(("rand_vx_equal_rand_and_nn", 0xc123));
         opcodes.push(("draw_vx_vy_n", 0xd123));
+        opcodes.push(("keyop_if_key_equal_vx", 0xe59e));
+        opcodes.push(("keyop_if_key_not_equal_vx", 0xe5a1));
+        opcodes.push(("timer_vx_equal_get_delay", 0xf507));
+        opcodes.push(("keyop_vx_equal_key", 0xf50a));
+        opcodes.push(("timer_delay_timer_equal_vx", 0xf515));
+        opcodes.push(("sound_sound_timer_equal_vx", 0xf518));
+        opcodes.push(("mem_i_equal_i_plus_vx", 0xf51e));
+        opcodes.push(("mem_i_equal_sprite_addr_vx", 0xf529));
+        opcodes.push(("mem_bcd", 0xf533));
+        opcodes.push(("mem_reg_dump", 0xf555));
+        opcodes.push(("mem_reg_load", 0xf565));
         
-
         opcodes
     }
 
