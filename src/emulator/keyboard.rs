@@ -2,11 +2,11 @@ extern crate mio;
 extern crate termios;
 extern crate libc;
 
-use termios::{Termios, TCSANOW, ICANON, ECHO, tcsetattr};
-use mio::*;
-use mio::unix::EventedFd;
+use self::termios::{Termios, TCSANOW, ICANON, ECHO, tcsetattr};
+use self::mio::*;
+use self::mio::unix::EventedFd;
 
-use libc::{c_void, read};
+use self::libc::{c_void, read};
 
 pub struct Keyboard {
     poll: Poll,
