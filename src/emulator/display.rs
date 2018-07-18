@@ -1,7 +1,7 @@
 extern crate pancurses;
 
 use emulator::memory::{Memory};
-use self::pancurses::{Window, initscr, endwin};
+use self::pancurses::{Window, initscr, endwin,curs_set};
 use std::{cmp, ops};
 
 const DISPLAY_WIDTH: usize = 64;
@@ -53,6 +53,7 @@ impl Display {
     pub fn new() -> Self {
 
         let window = initscr();
+        curs_set(0);
         let (pixel_width, pixel_height) = Display::calculate_pixel_width_height(&window);
 
         Self {
@@ -64,7 +65,7 @@ impl Display {
     }
 
     fn calculate_pixel_width_height(window: &Window) -> (u8, u8) {
-        let (real_width_px, real_height_px) = window.get_beg_yx();
+        let (real_width_px, real_height_px) = window.get_max_yx();
         let shorter_side = cmp::min(real_width_px, real_height_px);
 
         let pixel_width = ((shorter_side / DISPLAY_WIDTH as i32) as f64).floor();
@@ -77,9 +78,9 @@ impl Display {
         let (window_x, window_y) = self.calculate_window_x_y(x, y);
         self.window.mv(window_x as i32, window_y as i32);
         if data == 0 {
-            self.window.addch(' ');
+            self.window.printw(" ");
         } else {
-            self.window.addch(0x25A0);
+            self.window.printw("O");
         }
     }
 
@@ -110,8 +111,8 @@ impl TDisplay for Display {
 
         let mut i = 0;
         let mut data;
-        for row in y..rows {
-            for column in x..SPRITE_WIDTH {
+        for row in y..rows+y {
+            for column in x..SPRITE_WIDTH+x {
                 data = match memory.read(*address_register + i) {
                     0 => 0,
                     _ => 1,
@@ -130,7 +131,7 @@ impl TDisplay for Display {
     }
 }
 
-//#[cfg(test)]
+#[cfg(test)]
 mod test_display {
     use super::{Display, TDisplay};
     use emulator::memory::{Memory};
