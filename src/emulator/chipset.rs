@@ -3,6 +3,8 @@ use emulator::opcode_processor::{OpCode, TOpCodesProcessor};
 use emulator::display::TDisplay;
 use emulator::keyboard::TKeyboard;
 
+use std::thread;
+
 const REGISTERS_NUMBER: usize = 16;
 pub const REGISTER_VF: usize = 0xf;
 
@@ -55,6 +57,13 @@ impl <O:TOpCodesProcessor, D:TDisplay, K:TKeyboard> Chipset for Chip8Chipset<O, 
     }
 
     fn tick(&mut self) {
+        if self.delay_timer > 0 {
+            self.delay_timer -= 1;
+        }
+        if self.sound_timer > 0 {
+            self.sound_timer -= 1;
+        }
+
         if let Some(opcode) = self.next_opcode() {
             match opcode.get_parts() {
                 (0x0, 0x0, 0xe, 0x0) => {
@@ -164,6 +173,8 @@ impl <O:TOpCodesProcessor, D:TDisplay, K:TKeyboard> Chipset for Chip8Chipset<O, 
                 }
             }
         };
+
+        thread::sleep_ms(16);
     }
 
     fn next_opcode(&mut self) -> Option<OpCode> {

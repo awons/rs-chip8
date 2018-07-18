@@ -412,7 +412,7 @@ mod test_opcode {
     fn test_get_n() {
         let opcode = OpCode::from_data(0x1456);
 
-        assert_eq!(0x6, opcode.get_y());
+        assert_eq!(0x6, opcode.get_n());
     }
 }
 
