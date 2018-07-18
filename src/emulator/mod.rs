@@ -18,6 +18,15 @@ pub struct Emulator {
 }
 
 impl Emulator {
+    pub fn new() -> Self {
+        Emulator {
+            memory: Memory::new(),
+            stack: Stack::new(),
+            fontset: Fontset::new(),
+            registers: Registers::new()
+        }
+    }
+
     pub fn initialize(mut self, data: &[u8]) -> InitializedEmulator {
         self.load_fonts();
         self.load_program(data);
@@ -60,8 +69,15 @@ pub struct InitializedEmulator {
 }
 
 impl InitializedEmulator {
-    pub fn run(&mut self)
-    {}
+    pub fn run(&mut self) {
+        loop {
+            if let Ok(()) = self.chipset.tick() {
+                continue;
+            }
+
+            break;
+        }
+    }
 }
 
 struct Fontset {
@@ -102,19 +118,6 @@ mod test_emulator {
     use super::*;
 
     #[test]
-    fn test_can_initialize_chipset()
-    {
-        let emulator = Emulator {
-            memory: Memory::new(),
-            stack: Stack::new(),
-            fontset: Fontset::new(),
-            registers: Registers::new(),
-        };
-
-        let _ = emulator.initialize(&[0x1, 0x2, 0x3, 0x4, 0x5, 0x6]);
-    }
-
-    #[test]
     fn test_can_run_program() {
         let emulator = Emulator {
             memory: Memory::new(),
@@ -123,7 +126,7 @@ mod test_emulator {
             registers: Registers::new(),
         };
 
-        let mut initialized_emulator = emulator.initialize(&[0x1, 0x2, 0x3, 0x4, 0x5, 0x6]);
+        let mut initialized_emulator = emulator.initialize(&[0x00, 0xe0]);
 
         initialized_emulator.run();
     }

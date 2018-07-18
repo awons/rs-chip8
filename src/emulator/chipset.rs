@@ -3,7 +3,7 @@ use emulator::opcode_processor::{OpCode, TOpCodesProcessor};
 use emulator::display::TDisplay;
 use emulator::keyboard::TKeyboard;
 
-use std::thread;
+use std::{thread, time};
 
 const REGISTERS_NUMBER: usize = 16;
 pub const REGISTER_VF: usize = 0xf;
@@ -13,7 +13,7 @@ pub const PROGRAM_COUNTER_BOUNDARY: u16 = 0x200;
 
 pub trait Chipset {
     fn get_memory(&self) -> &Memory;
-    fn tick(&mut self);
+    fn tick(&mut self) -> Result<(), String>;
     fn next_opcode(&mut self) -> Option<OpCode>;
 }
 
@@ -56,7 +56,9 @@ impl <O:TOpCodesProcessor, D:TDisplay, K:TKeyboard> Chipset for Chip8Chipset<O, 
         &self.memory
     }
 
-    fn tick(&mut self) {
+    fn tick(&mut self) -> Result<(), String> {
+        thread::sleep(time::Duration::from_millis(16));
+
         if self.delay_timer > 0 {
             self.delay_timer -= 1;
         }
@@ -64,124 +66,130 @@ impl <O:TOpCodesProcessor, D:TDisplay, K:TKeyboard> Chipset for Chip8Chipset<O, 
             self.sound_timer -= 1;
         }
 
-        if let Some(opcode) = self.next_opcode() {
-            match opcode.get_parts() {
-                (0x0, 0x0, 0xe, 0x0) => {
-                    self.opcode_processor.clear_screen(&mut self.display);
+        match self.next_opcode() {
+            Some(opcode) => {
+                match opcode.get_parts() {
+                    (0x0, 0x0, 0xe, 0x0) => {
+                        println!("clear screen");
+                        self.opcode_processor.clear_screen(&mut self.display);
+                    }
+                    (0x0, 0x0, 0xe, 0xe) => {
+                        self.opcode_processor.return_from_subroutine(&mut self.stack, &mut self.program_counter);
+                    }
+                    (0x1, _, _, _) => {
+                        self.opcode_processor.jump_to_address(&mut self.program_counter, opcode.get_address());
+                    }
+                    (0x2, _, _, _) => {
+                        self.opcode_processor.call_subroutine(&mut self.program_counter, opcode.get_address(), &mut self.stack);
+                    }
+                    (0x3, _, _, _) => {
+                        self.opcode_processor.cond_vx_equal_nn(&self.registers, &mut self.program_counter, opcode.get_x(), opcode.get_short_address());
+                    }
+                    (0x4, _, _, _) => {
+                        self.opcode_processor.cond_vx_not_equal_nn(&self.registers, &mut self.program_counter, opcode.get_x(), opcode.get_short_address());
+                    }
+                    (0x5, _, _, 0x0) => {
+                        self.opcode_processor.cond_vx_equal_vy(&self.registers, &mut self.program_counter, opcode.get_x(), opcode.get_short_address());
+                    }
+                    (0x6, _, _, _) => {
+                        self.opcode_processor.const_vx_equal_nn(&mut self.registers, opcode.get_x(), opcode.get_short_address());
+                    }
+                    (0x7, _, _, _) => {
+                        self.opcode_processor.const_vx_plus_equal_nn(&mut self.registers, opcode.get_x(), opcode.get_short_address());
+                    }
+                    (0x8, _, _, 0x0) => {
+                        self.opcode_processor.assign_vx_equal_vy(&mut self.registers, opcode.get_x(), opcode.get_y());
+                    }
+                    (0x8, _, _, 0x1) => {
+                        self.opcode_processor.bitop_vx_equal_vx_or_vy(&mut self.registers, opcode.get_x(), opcode.get_y());
+                    }
+                    (0x8, _, _, 0x2) => {
+                        self.opcode_processor.bitop_vx_equal_vx_and_vy(&mut self.registers, opcode.get_x(), opcode.get_y());
+                    }
+                    (0x8, _, _, 0x3) => {
+                        self.opcode_processor.bitop_vx_equal_vx_xor_vy(&mut self.registers, opcode.get_x(), opcode.get_y());
+                    }
+                    (0x8, _, _, 0x4) => {
+                        self.opcode_processor.math_vx_equal_vx_plus_vy(&mut self.registers, opcode.get_x(), opcode.get_y());
+                    }
+                    (0x8, _, _, 0x5) => {
+                        self.opcode_processor.math_vx_equal_vx_minus_vy(&mut self.registers, opcode.get_x(), opcode.get_y());
+                    }
+                    (0x8, _, _, 0x6) => {
+                        self.opcode_processor.bitop_vx_equal_vy_shr(&mut self.registers, opcode.get_x(), opcode.get_y());
+                    }
+                    (0x8, _, _, 0x7) => {
+                        self.opcode_processor.math_vx_equal_vy_minus_vx(&mut self.registers, opcode.get_x(), opcode.get_y());
+                    }
+                    (0x8, _, _, 0xe) => {
+                        self.opcode_processor.bitop_vx_equal_vy_shl(&mut self.registers, opcode.get_x(), opcode.get_y());
+                    }
+                    (0x9, _, _, 0x0) => {
+                        self.opcode_processor.cond_vx_not_equal_vy(&mut self.registers, &mut self.program_counter, opcode.get_x(), opcode.get_y());
+                    }
+                    (0xa, _, _, _) => {
+                        self.opcode_processor.mem_i_equal_nnn(&mut self.address_register, opcode.get_address());
+                    }
+                    (0xb, _, _, _) => {
+                        self.opcode_processor.flow_pc_equal_v0_plus_nnn(&mut self.program_counter, opcode.get_address());
+                    }
+                    (0xc, _, _, _) => {
+                        self.opcode_processor.rand_vx_equal_rand_and_nn(&mut self.registers, opcode.get_x(), opcode.get_short_address());
+                    },
+                    (0xd, _, _, _) => {
+                        self.opcode_processor.draw_vx_vy_n(opcode.get_x(), opcode.get_y(), opcode.get_n(), &mut self.display, &self.memory, &self.address_register, &mut self.registers);
+                    }
+                    (0xe, _, 0x9, 0xe) => {
+                        self.opcode_processor.keyop_if_key_equal_vx(&mut self.keyboard, &self.registers, &mut self.program_counter, opcode.get_x());
+                    }
+                    (0xe, _, 0xa, 0x1) => {
+                        self.opcode_processor.keyop_if_key_not_equal_vx(&mut self.keyboard, &self.registers, &mut self.program_counter, opcode.get_x());
+                    },
+                    (0xf, _, 0x0, 0x7) => {
+                        self.opcode_processor.timer_vx_equal_get_delay(&self.delay_timer, &mut self.registers, opcode.get_x());
+                    }
+                    (0xf, _, 0x0, 0xa) => {
+                        self.opcode_processor.keyop_vx_equal_key(&mut self.keyboard, &mut self.registers, opcode.get_x());
+                    }
+                    (0xf, _, 0x1, 0x5) => {
+                        self.opcode_processor.timer_delay_timer_equal_vx(&mut self.delay_timer, &self.registers, opcode.get_x());
+                    }
+                    (0xf, _, 0x1, 0x8) => {
+                        self.opcode_processor.sound_sound_timer_equal_vx();
+                    },
+                    (0xf, _, 0x1, 0xe) => {
+                        self.opcode_processor.mem_i_equal_i_plus_vx(&mut self.registers,&mut self.address_register, opcode.get_x());
+                    }
+                    (0xf, _, 0x2, 0x9) => {
+                        self.opcode_processor.mem_i_equal_sprite_addr_vx(&self.registers, &mut self.address_register, opcode.get_x());
+                    }
+                    (0xf, _, 0x3, 0x3) => {
+                        self.opcode_processor.mem_bcd(&self.registers, &self.address_register, &mut self.memory, opcode.get_x());
+                    }
+                    (0xf, _, 0x5, 0x5) => {
+                        self.opcode_processor.mem_reg_dump(&self.registers, &mut self.memory, &mut self.address_register, opcode.get_x());
+                    }
+                    (0xf, _, 0x6, 0x5) => {
+                        self.opcode_processor.mem_reg_load(&mut self.registers, &self.memory, &mut self.address_register, opcode.get_x());
+                    }
+                    (0x0, 0x0, 0x0, 0x0) => {
+                        return Err("No more opcodes".to_string());
+                    }
+                    _ => {
+                        panic!("Unknown opcode {:#x}", opcode);
+                    }
                 }
-                (0x0, 0x0, 0xe, 0xe) => {
-                    self.opcode_processor.return_from_subroutine(&mut self.stack, &mut self.program_counter);
-                }
-                (0x1, _, _, _) => {
-                    self.opcode_processor.jump_to_address(&mut self.program_counter, opcode.get_address());
-                }
-                (0x2, _, _, _) => {
-                    self.opcode_processor.call_subroutine(&mut self.program_counter, opcode.get_address(), &mut self.stack);
-                }
-                (0x3, _, _, _) => {
-                    self.opcode_processor.cond_vx_equal_nn(&self.registers, &mut self.program_counter, opcode.get_x(), opcode.get_short_address());
-                }
-                (0x4, _, _, _) => {
-                    self.opcode_processor.cond_vx_not_equal_nn(&self.registers, &mut self.program_counter, opcode.get_x(), opcode.get_short_address());
-                }
-                (0x5, _, _, 0x0) => {
-                    self.opcode_processor.cond_vx_equal_vy(&self.registers, &mut self.program_counter, opcode.get_x(), opcode.get_short_address());
-                }
-                (0x6, _, _, _) => {
-                    self.opcode_processor.const_vx_equal_nn(&mut self.registers, opcode.get_x(), opcode.get_short_address());
-                }
-                (0x7, _, _, _) => {
-                    self.opcode_processor.const_vx_plus_equal_nn(&mut self.registers, opcode.get_x(), opcode.get_short_address());
-                }
-                (0x8, _, _, 0x0) => {
-                    self.opcode_processor.assign_vx_equal_vy(&mut self.registers, opcode.get_x(), opcode.get_y());
-                }
-                (0x8, _, _, 0x1) => {
-                    self.opcode_processor.bitop_vx_equal_vx_or_vy(&mut self.registers, opcode.get_x(), opcode.get_y());
-                }
-                (0x8, _, _, 0x2) => {
-                    self.opcode_processor.bitop_vx_equal_vx_and_vy(&mut self.registers, opcode.get_x(), opcode.get_y());
-                }
-                (0x8, _, _, 0x3) => {
-                    self.opcode_processor.bitop_vx_equal_vx_xor_vy(&mut self.registers, opcode.get_x(), opcode.get_y());
-                }
-                (0x8, _, _, 0x4) => {
-                    self.opcode_processor.math_vx_equal_vx_plus_vy(&mut self.registers, opcode.get_x(), opcode.get_y());
-                }
-                (0x8, _, _, 0x5) => {
-                    self.opcode_processor.math_vx_equal_vx_minus_vy(&mut self.registers, opcode.get_x(), opcode.get_y());
-                }
-                (0x8, _, _, 0x6) => {
-                    self.opcode_processor.bitop_vx_equal_vy_shr(&mut self.registers, opcode.get_x(), opcode.get_y());
-                }
-                (0x8, _, _, 0x7) => {
-                    self.opcode_processor.math_vx_equal_vy_minus_vx(&mut self.registers, opcode.get_x(), opcode.get_y());
-                }
-                (0x8, _, _, 0xe) => {
-                    self.opcode_processor.bitop_vx_equal_vy_shl(&mut self.registers, opcode.get_x(), opcode.get_y());
-                }
-                (0x9, _, _, 0x0) => {
-                    self.opcode_processor.cond_vx_not_equal_vy(&mut self.registers, &mut self.program_counter, opcode.get_x(), opcode.get_y());
-                }
-                (0xa, _, _, _) => {
-                    self.opcode_processor.mem_i_equal_nnn(&mut self.address_register, opcode.get_address());
-                }
-                (0xb, _, _, _) => {
-                    self.opcode_processor.flow_pc_equal_v0_plus_nnn(&mut self.program_counter, opcode.get_address());
-                }
-                (0xc, _, _, _) => {
-                    self.opcode_processor.rand_vx_equal_rand_and_nn(&mut self.registers, opcode.get_x(), opcode.get_short_address());
-                },
-                (0xd, _, _, _) => {
-                    self.opcode_processor.draw_vx_vy_n(opcode.get_x(), opcode.get_y(), opcode.get_n(), &mut self.display, &self.memory, &self.address_register, &mut self.registers);
-                }
-                (0xe, _, 0x9, 0xe) => {
-                    self.opcode_processor.keyop_if_key_equal_vx(&mut self.keyboard, &self.registers, &mut self.program_counter, opcode.get_x());
-                }
-                (0xe, _, 0xa, 0x1) => {
-                    self.opcode_processor.keyop_if_key_not_equal_vx(&mut self.keyboard, &self.registers, &mut self.program_counter, opcode.get_x());
-                },
-                (0xf, _, 0x0, 0x7) => {
-                    self.opcode_processor.timer_vx_equal_get_delay(&self.delay_timer, &mut self.registers, opcode.get_x());
-                }
-                (0xf, _, 0x0, 0xa) => {
-                    self.opcode_processor.keyop_vx_equal_key(&mut self.keyboard, &mut self.registers, opcode.get_x());
-                }
-                (0xf, _, 0x1, 0x5) => {
-                    self.opcode_processor.timer_delay_timer_equal_vx(&mut self.delay_timer, &self.registers, opcode.get_x());
-                }
-                (0xf, _, 0x1, 0x8) => {
-                    self.opcode_processor.sound_sound_timer_equal_vx();
-                },
-                (0xf, _, 0x1, 0xe) => {
-                    self.opcode_processor.mem_i_equal_i_plus_vx(&mut self.registers,&mut self.address_register, opcode.get_x());
-                }
-                (0xf, _, 0x2, 0x9) => {
-                    self.opcode_processor.mem_i_equal_sprite_addr_vx(&self.registers, &mut self.address_register, opcode.get_x());
-                }
-                (0xf, _, 0x3, 0x3) => {
-                    self.opcode_processor.mem_bcd(&self.registers, &self.address_register, &mut self.memory, opcode.get_x());
-                }
-                (0xf, _, 0x5, 0x5) => {
-                    self.opcode_processor.mem_reg_dump(&self.registers, &mut self.memory, &mut self.address_register, opcode.get_x());
-                }
-                (0xf, _, 0x6, 0x5) => {
-                    self.opcode_processor.mem_reg_load(&mut self.registers, &self.memory, &mut self.address_register, opcode.get_x());
-                }
-                _ => {
-                    panic!("Unknown opcode {:#x}", opcode);
-                }
+                Ok(())
             }
-        };
-
-        thread::sleep_ms(16);
+            None => Err("No more opcodes".to_string())
+        }
     }
 
     fn next_opcode(&mut self) -> Option<OpCode> {
         if self.program_counter >= (MEMORY_SIZE as u16) {
             return None;
         }
-
+        
         let data = (self.memory.read(self.program_counter) as u16) << 8
             | (self.memory.read(self.program_counter + 1) as u16);
         self.program_counter += 2;
@@ -269,7 +277,7 @@ mod test_chipset {
 
             let mut chipset = Chip8Chipset::new(memory, stack, registers, MockedOpCodesProcessor::new(), Display::new(), Keyboard::new());
 
-            chipset.tick();
+            let _ = chipset.tick();
             assert_eq!(method_name, chipset.get_opcode_processor().get_matched_method());
         }
     }
@@ -373,7 +381,7 @@ mod test_chipset {
         fn rand_vx_equal_rand_and_nn(&self, _registers: &mut Registers, _x: u8, _nn: u8) {
             self.set_matched_method("rand_vx_equal_rand_and_nn");
         }
-        fn draw_vx_vy_n(&self, _x: u8, _y: u8, _n: u8, _display: &mut TDisplay, _memory: &Memory, _address_register: &u16, registers: &mut Registers) {
+        fn draw_vx_vy_n(&self, _x: u8, _y: u8, _n: u8, _display: &mut TDisplay, _memory: &Memory, _address_register: &u16, _registers: &mut Registers) {
             self.set_matched_method("draw_vx_vy_n");
         }
         fn mem_i_equal_i_plus_vx(&self, _registers: &mut Registers, _address_register: &mut u16, _x: u8) {
@@ -391,10 +399,10 @@ mod test_chipset {
         fn mem_reg_load(&self, _registers: &mut Registers, _memory: &Memory, _address_register: &mut u16, _x: u8) {
             self.set_matched_method("mem_reg_load");
         }
-        fn keyop_if_key_equal_vx(&self, keyboard: &mut TKeyboard, registers: &Registers, program_counter: &mut u16, x: u8) {
+        fn keyop_if_key_equal_vx(&self, _keyboard: &mut TKeyboard, _registers: &Registers, _program_counter: &mut u16, x: u8) {
             self.set_matched_method("keyop_if_key_equal_vx");
         }
-        fn keyop_if_key_not_equal_vx(&self, keyboard: &mut TKeyboard, registers: &Registers, program_counter: &mut u16, x: u8) {
+        fn keyop_if_key_not_equal_vx(&self, _keyboard: &mut TKeyboard, _registers: &Registers, _program_counter: &mut u16, x: u8) {
             self.set_matched_method("keyop_if_key_not_equal_vx");
         }
         fn keyop_vx_equal_key(&self, _keyboard: &mut TKeyboard, _registers: &mut Registers, _x: u8) {
@@ -403,7 +411,7 @@ mod test_chipset {
         fn timer_vx_equal_get_delay(&self, _delay_timer: &u8, _registers: &mut Registers, _x: u8) {
             self.set_matched_method("timer_vx_equal_get_delay");
         }
-        fn timer_delay_timer_equal_vx(&self, delay_timer: &mut u8, registers: &Registers, x: u8) {
+        fn timer_delay_timer_equal_vx(&self, _delay_timer: &mut u8, _registers: &Registers, _x: u8) {
             self.set_matched_method("timer_delay_timer_equal_vx");
         }
         fn sound_sound_timer_equal_vx(&self) {

@@ -982,7 +982,7 @@ mod test_opcodes_processor {
     #[test]
     fn test_mem_bcd() {
         let x: u8 = 0x1;
-        let mut address_register: u16 = 0;
+        let address_register: u16 = 0;
         let mut memory = Memory::new();
         let mut registers = Registers::new();
 
