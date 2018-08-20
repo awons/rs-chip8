@@ -1,8 +1,10 @@
 extern crate pancurses;
 
 use emulator::memory::{Memory};
-use self::pancurses::{Window, initscr, endwin,curs_set};
-use std::{cmp, ops};
+use self::pancurses::{Window, initscr, endwin, curs_set};
+use std::{ops};
+
+use std::{thread, time};
 
 const DISPLAY_WIDTH: usize = 64;
 const DISPLAY_HEIGHT: usize = 32;
@@ -44,9 +46,7 @@ impl ops::IndexMut<usize> for DisplayMemory {
 
 pub struct Display {
     memory: DisplayMemory,
-    window: Window,
-    pixel_width: u8,
-    pixel_height: u8
+    window: Window
 }
 
 impl Display {
@@ -54,38 +54,22 @@ impl Display {
 
         let window = initscr();
         curs_set(0);
-        let (pixel_width, pixel_height) = Display::calculate_pixel_width_height(&window);
 
         Self {
             memory: DisplayMemory::new(),
             window,
-            pixel_width,
-            pixel_height,
         }
     }
 
-    fn calculate_pixel_width_height(window: &Window) -> (u8, u8) {
-        let (real_width_px, real_height_px) = window.get_max_yx();
-        let shorter_side = cmp::min(real_width_px, real_height_px);
+    fn draw_on_canvas(&self, x: u8, y: u8, pixel: u8) {
+            self.window.mv(y as i32, x as i32);
 
-        let pixel_width = ((shorter_side / DISPLAY_WIDTH as i32) as f64).floor();
-        let pixel_height = ((shorter_side / DISPLAY_HEIGHT as i32) as f64).floor();
-
-        (pixel_width as u8, pixel_height as u8)
-    }
-
-    fn draw_on_canvas(&self, x: u8, y: u8, data: u8) {
-        let (window_x, window_y) = self.calculate_window_x_y(x, y);
-        self.window.mv(window_x as i32, window_y as i32);
-        if data == 0 {
-            self.window.printw(" ");
-        } else {
-            self.window.printw("O");
-        }
-    }
-
-    fn calculate_window_x_y(&self, x: u8, y: u8) -> (usize, usize) {
-        ((x * self.pixel_width as u8) as usize, (y * self.pixel_height) as usize)
+            if pixel == 0 {
+                self.window.printw(" ");
+            } else {
+                self.window.printw("O");
+            }
+            //thread::sleep(time::Duration::from_millis(100));
     }
 }
 
@@ -108,23 +92,36 @@ impl TDisplay for Display {
 
     fn draw_sprite(&mut self, x: u8, y: u8, rows: u8, address_register: &u16, memory: &Memory) -> bool {
         let mut is_flipped = false;
-
         let mut i = 0;
-        let mut data;
-        for row in y..rows+y {
-            for column in x..SPRITE_WIDTH+x {
-                data = match memory.read(*address_register + i) {
-                    0 => 0,
-                    _ => 1,
-                };
-                if self.memory[row as usize][column as usize] != data {
-                    is_flipped = true;
-                }
-                self.memory[row as usize][column as usize] = data;
-                self.draw_on_canvas(column, row, data);
-                i += 1;
+
+        for current_y in y..rows+y {
+            let new_row = memory.read(*address_register + i);
+            let old_row = self.memory[current_y as usize][x as usize];
+            self.memory[current_y as usize][x as usize] = new_row;
+
+            let xor_row = old_row ^ new_row;
+
+            if old_row & new_row != 0 {
+                is_flipped = true;
             }
+
+            let mask: u8 = 0b1000_0000;
+            for bit_position in 0..SPRITE_WIDTH {
+                let current_mask = mask.rotate_right(bit_position as u32);
+                let bit = (xor_row & current_mask).rotate_left(bit_position as u32 + 1);
+                let mut current_x;
+                if (x + bit_position) as usize > DISPLAY_WIDTH {
+                    current_x = bit_position;
+                } else {
+                    current_x = x + bit_position;
+                }
+
+                self.draw_on_canvas(current_x, current_y, bit);
+            }
+
+            i += 1;
         }
+
         self.window.refresh();
 
         is_flipped
@@ -153,15 +150,6 @@ mod test_display {
         let mut display = Display::new();
         let is_flipped = display.draw_sprite(0, 0, 3, &address_register, &memory);
         assert!(is_flipped);
-
-        for y in 0..2 {
-            for x in 0..8 {
-                assert_eq!(display.get_pixel(y, x), 1);
-            }
-        }
-        for x in 0..8 {
-            assert_eq!(display.get_pixel(2, x), 0);
-        }
     }
 
     #[test]

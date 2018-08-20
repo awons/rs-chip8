@@ -9,6 +9,7 @@ use self::memory::{Memory, Stack, Registers};
 use self::opcode_processor::OpCodesProcessor;
 use self::display::Display;
 use self::keyboard::Keyboard;
+use std::{thread, time};
 
 pub struct Emulator {
     memory: Memory,
@@ -72,6 +73,7 @@ impl InitializedEmulator {
     pub fn run(&mut self) {
         loop {
             if let Ok(()) = self.chipset.tick() {
+                thread::sleep(time::Duration::from_millis(16));
                 continue;
             }
 

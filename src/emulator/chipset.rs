@@ -3,8 +3,6 @@ use emulator::opcode_processor::{OpCode, TOpCodesProcessor};
 use emulator::display::TDisplay;
 use emulator::keyboard::TKeyboard;
 
-use std::{thread, time};
-
 const REGISTERS_NUMBER: usize = 16;
 pub const REGISTER_VF: usize = 0xf;
 
@@ -57,8 +55,6 @@ impl <O:TOpCodesProcessor, D:TDisplay, K:TKeyboard> Chipset for Chip8Chipset<O, 
     }
 
     fn tick(&mut self) -> Result<(), String> {
-        thread::sleep(time::Duration::from_millis(16));
-
         if self.delay_timer > 0 {
             self.delay_timer -= 1;
         }
@@ -70,7 +66,6 @@ impl <O:TOpCodesProcessor, D:TDisplay, K:TKeyboard> Chipset for Chip8Chipset<O, 
             Some(opcode) => {
                 match opcode.get_parts() {
                     (0x0, 0x0, 0xe, 0x0) => {
-                        println!("clear screen");
                         self.opcode_processor.clear_screen(&mut self.display);
                     }
                     (0x0, 0x0, 0xe, 0xe) => {
@@ -282,8 +277,6 @@ mod test_chipset {
         }
     }
 
-    //Add missing match tests
-
     fn create_memory() -> (Memory, Stack, Registers) {
         (Memory::new(), Stack::new(), Registers::new())
     }
@@ -399,10 +392,10 @@ mod test_chipset {
         fn mem_reg_load(&self, _registers: &mut Registers, _memory: &Memory, _address_register: &mut u16, _x: u8) {
             self.set_matched_method("mem_reg_load");
         }
-        fn keyop_if_key_equal_vx(&self, _keyboard: &mut TKeyboard, _registers: &Registers, _program_counter: &mut u16, x: u8) {
+        fn keyop_if_key_equal_vx(&self, _keyboard: &mut TKeyboard, _registers: &Registers, _program_counter: &mut u16, _x: u8) {
             self.set_matched_method("keyop_if_key_equal_vx");
         }
-        fn keyop_if_key_not_equal_vx(&self, _keyboard: &mut TKeyboard, _registers: &Registers, _program_counter: &mut u16, x: u8) {
+        fn keyop_if_key_not_equal_vx(&self, _keyboard: &mut TKeyboard, _registers: &Registers, _program_counter: &mut u16, _x: u8) {
             self.set_matched_method("keyop_if_key_not_equal_vx");
         }
         fn keyop_vx_equal_key(&self, _keyboard: &mut TKeyboard, _registers: &mut Registers, _x: u8) {
