@@ -72,6 +72,7 @@ impl Display {
 
 impl Drop for Display {
     fn drop(&mut self) {
+        curs_set(1);
         endwin();
     }
 }
