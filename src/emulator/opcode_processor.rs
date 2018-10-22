@@ -274,7 +274,9 @@ impl TOpCodesProcessor for OpCodesProcessor {
         registers.set_register_at(x as usize, rand::random::<u8>() & nn);
     }
 
-    fn draw_vx_vy_n(&self, x: u8, y: u8, n: u8, display: &mut TDisplay, memory: &Memory, address_register: &u16, registers: &mut Registers) {
+    fn draw_vx_vy_n(&self, vx: u8, vy: u8, n: u8, display: &mut TDisplay, memory: &Memory, address_register: &u16, registers: &mut Registers) {
+        let x = registers.get_register_at(vx as usize);
+        let y = registers.get_register_at(vy as usize);
         let collision_detected = display.draw_sprite(x, y, n, address_register, memory);
         registers.set_register_at(0xf, collision_detected as u8);
     }
@@ -441,11 +443,13 @@ mod test_opcodes_processor {
         fn draw_sprite(&mut self, x: u8, _y: u8, _rows: u8, _address_register: &u16, _memory: &Memory) -> bool {
             self.draw_sprite_called = true;
 
-            if x == 0 {
-                false
-            } else {
-                true
+            if x == 10 {
+                return false;
+            } else if x == 11 {
+                return true;
             }
+
+            panic!("Should never be here");
         }
 
         fn clear(&mut self) {
@@ -1053,7 +1057,9 @@ mod test_opcodes_processor {
         let mut display = MockedDisplay::new();
         let mut registers = Registers::new();
 
-        OpCodesProcessor::new().draw_vx_vy_n(0, 0, 3, &mut display, &mut memory, &address_register, &mut registers);
+        registers.set_register_at(0, 10);
+
+        OpCodesProcessor::new().draw_vx_vy_n(0, 1, 3, &mut display, &mut memory, &address_register, &mut registers);
 
         assert!(display.draw_sprite_called);
         assert_eq!(0x0, registers.get_register_at(0xf));
@@ -1066,7 +1072,9 @@ mod test_opcodes_processor {
         let mut display = MockedDisplay::new();
         let mut registers = Registers::new();
 
-        OpCodesProcessor::new().draw_vx_vy_n(1, 0, 3, &mut display, &mut memory, &address_register, &mut registers);
+        registers.set_register_at(0, 11);
+
+        OpCodesProcessor::new().draw_vx_vy_n(0, 1, 3, &mut display, &mut memory, &address_register, &mut registers);
 
         assert!(display.draw_sprite_called);
         assert_eq!(0x1, registers.get_register_at(0xf));

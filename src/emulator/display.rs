@@ -4,8 +4,6 @@ use emulator::memory::{Memory};
 use self::pancurses::{Window, initscr, endwin, curs_set};
 use std::{ops};
 
-use std::{thread, time};
-
 const DISPLAY_WIDTH: usize = 64;
 const DISPLAY_HEIGHT: usize = 32;
 const SPRITE_WIDTH: u8 = 8;
@@ -69,7 +67,6 @@ impl Display {
             } else {
                 self.window.printw("O");
             }
-            //thread::sleep(time::Duration::from_millis(100));
     }
 }
 
@@ -80,7 +77,7 @@ impl Drop for Display {
 }
 
 pub trait TDisplay {
-    fn draw_sprite(&mut self, x: u8, y: u8, rows: u8, address_register: &u16, memory: &Memory) -> bool;
+    fn draw_sprite(&mut self, start_x: u8, start_y: u8, rows: u8, address_register: &u16, memory: &Memory) -> bool;
     fn clear(&mut self);
 }
 
@@ -90,33 +87,32 @@ impl TDisplay for Display {
         self.window.clear();
     }
 
-    fn draw_sprite(&mut self, x: u8, y: u8, rows: u8, address_register: &u16, memory: &Memory) -> bool {
+    fn draw_sprite(&mut self, start_x: u8, start_y: u8, rows: u8, address_register: &u16, memory: &Memory) -> bool {
         let mut is_flipped = false;
         let mut i = 0;
 
-        for current_y in y..rows+y {
-            let new_row = memory.read(*address_register + i);
-            let old_row = self.memory[current_y as usize][x as usize];
-            self.memory[current_y as usize][x as usize] = new_row;
-
-            let xor_row = old_row ^ new_row;
-
-            if old_row & new_row != 0 {
-                is_flipped = true;
-            }
+        for display_y in start_y..rows+start_y {
+            let sprite_new_row = memory.read(*address_register + i);
 
             let mask: u8 = 0b1000_0000;
-            for bit_position in 0..SPRITE_WIDTH {
-                let current_mask = mask.rotate_right(bit_position as u32);
-                let bit = (xor_row & current_mask).rotate_left(bit_position as u32 + 1);
-                let mut current_x;
-                if (x + bit_position) as usize > DISPLAY_WIDTH {
-                    current_x = bit_position;
+            for sprite_position_x in 0..SPRITE_WIDTH {
+                let mut display_x;
+                if (start_x + sprite_position_x + 1) as usize > DISPLAY_WIDTH {
+                    display_x = sprite_position_x;
                 } else {
-                    current_x = x + bit_position;
+                    display_x = start_x + sprite_position_x;
+                }
+                let current_mask = mask.rotate_right(sprite_position_x as u32);
+
+                let old_pixel = self.memory[display_y as usize][display_x as usize];
+                let new_pixel = (sprite_new_row & current_mask).rotate_left(sprite_position_x as u32 + 1);
+                let xor_pixel = old_pixel ^ new_pixel;
+                self.memory[display_y as usize][display_x as usize] = xor_pixel;
+                if old_pixel & new_pixel == 1 {
+                    is_flipped = true;
                 }
 
-                self.draw_on_canvas(current_x, current_y, bit);
+                self.draw_on_canvas(display_x, display_y, xor_pixel);
             }
 
             i += 1;
@@ -140,7 +136,7 @@ mod test_display {
     }
 
     #[test]
-    fn test_draw_sprite_flipped() {
+    fn test_draw_sprite_not_flipped() {
         let mut memory = Memory::new();
         let address_register = 0x100;
         for address in address_register..0x110 {
@@ -149,11 +145,11 @@ mod test_display {
 
         let mut display = Display::new();
         let is_flipped = display.draw_sprite(0, 0, 3, &address_register, &memory);
-        assert!(is_flipped);
+        assert!(!is_flipped);
     }
 
     #[test]
-    fn test_draw_sprite_not_flipped() {
+    fn test_draw_sprite_flipped() {
         let mut memory = Memory::new();
         let address_register = 0x100;
         for address in address_register..0x110 {
@@ -164,7 +160,7 @@ mod test_display {
         display.draw_sprite(0, 0, 3, &address_register, &memory);
         let is_flipped = display.draw_sprite(0, 0, 3, &address_register, &memory);
 
-        assert!(!is_flipped);
+        assert!(is_flipped);
     }
 
     #[test]
