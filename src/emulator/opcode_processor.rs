@@ -229,13 +229,12 @@ impl TOpCodesProcessor for OpCodesProcessor {
         let vx = registers.get_register_at(x as usize);
         let vy = registers.get_register_at(y as usize);
 
-        let result = vy as i8 - vx as i8;
-        if vy > vx {
-            registers.set_register_at(0xf, 0x1);
-            registers.set_register_at(x as usize, result as u8);
-        } else {
+        registers.set_register_at(x as usize, vy.wrapping_sub(vx));
+
+        if (vy as i16 - vx as i16) < 0 {
             registers.set_register_at(0xf, 0x0);
-            registers.set_register_at(x as usize, (result * -1) as u8);
+        } else {
+            registers.set_register_at(0xf, 0x1);
         }
     }
 
@@ -808,18 +807,18 @@ mod test_opcodes_processor {
     }
 
     #[test]
-    fn test_math_vx_equal_vy_minus_vx_with_with() {
+    fn test_math_vx_equal_vy_minus_vx_with_underflow() {
         let x: u8 = 0x1;
         let y: u8 = 0x2;
 
         let mut registers = Registers::new();
-        registers.set_register_at(x as usize, 0xff);
-        registers.set_register_at(y as usize, 0x2);
+        registers.set_register_at(x as usize, u8::max_value());
+        registers.set_register_at(y as usize, 100);
         registers.set_register_at(0xf, 0x1);
 
         OpCodesProcessor::new().math_vx_equal_vy_minus_vx(&mut registers, x, y);
 
-        assert_eq!(0xfd, registers.get_register_at(x as usize));
+        assert_eq!(101, registers.get_register_at(x as usize));
         assert_eq!(0x0, registers.get_register_at(0xf));
     }
 
