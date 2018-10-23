@@ -156,7 +156,7 @@ impl TOpCodesProcessor for OpCodesProcessor {
 
     fn const_vx_plus_equal_nn(&self, registers: &mut Registers, x: u8, nn: u8) {
         let old_x = registers.get_register_at(x as usize);
-        registers.set_register_at(x as usize, old_x + nn);
+        registers.set_register_at(x as usize, old_x.wrapping_add(nn));
     }
 
     fn assign_vx_equal_vy(&self, registers: &mut Registers, x: u8, y: u8) {
@@ -631,15 +631,16 @@ mod test_opcodes_processor {
     }
 
     #[test]
-    #[should_panic]
-    fn test_const_vx_plus_equal_nn_will_panic_on_overflow() {
+    fn test_const_vx_plus_equal_nn_will_wrap_on_overflow() {
         let x: u8 = 0x2;
-        let nn: u8 = 0x1;
+        let nn: u8 = 200;
 
         let mut registers = Registers::new();
-        registers.set_register_at(x as usize, 0xff);
+        registers.set_register_at(x as usize, u8::max_value());
 
         OpCodesProcessor::new().const_vx_plus_equal_nn(&mut registers, x, nn);
+
+        assert_eq!(199, registers.get_register_at(x as usize));
     }
 
     #[test]
