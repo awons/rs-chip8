@@ -204,7 +204,7 @@ impl TOpCodesProcessor for OpCodesProcessor {
 
         registers.set_register_at(x as usize, vx.wrapping_sub(vy));
 
-        if (vx as i8 - vy as i8) < 0 {
+        if vx > vy {
             registers.set_register_at(0xf, 0x1);
         } else {
             registers.set_register_at(0xf, 0x0);
@@ -231,10 +231,10 @@ impl TOpCodesProcessor for OpCodesProcessor {
 
         registers.set_register_at(x as usize, vy.wrapping_sub(vx));
 
-        if (vy as i16 - vx as i16) < 0 {
-            registers.set_register_at(0xf, 0x0);
-        } else {
+        if vy > vx {
             registers.set_register_at(0xf, 0x1);
+        } else {
+            registers.set_register_at(0xf, 0x0);
         }
     }
 
