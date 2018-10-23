@@ -189,13 +189,13 @@ impl TOpCodesProcessor for OpCodesProcessor {
         let vx = registers.get_register_at(x as usize);
         let vy = registers.get_register_at(y as usize);
 
-        let result = vx as u16 + vy as u16;
-        if result > 0xff {
+        registers.set_register_at(x as usize, vx.wrapping_add(vy));
+
+        if vx as u16 + vy as u16 > 0xff {
             registers.set_register_at(0xf, 0x1);
         } else {
             registers.set_register_at(0xf, 0x0);
         }
-        registers.set_register_at(x as usize, result as u8);
     }
 
     fn math_vx_equal_vx_minus_vy(&self, registers: &mut Registers, x: u8, y: u8) {
@@ -718,13 +718,13 @@ mod test_opcodes_processor {
         let y: u8 = 0x2;
 
         let mut registers = Registers::new();
-        registers.set_register_at(x as usize, 0xff);
-        registers.set_register_at(y as usize, 0x2);
+        registers.set_register_at(x as usize, 200);
+        registers.set_register_at(y as usize, u8::max_value());
         registers.set_register_at(0xf, 0x0);
 
         OpCodesProcessor::new().math_vx_equal_vx_plus_vy(&mut registers, x, y);
 
-        assert_eq!(0x1, registers.get_register_at(x as usize));
+        assert_eq!(199, registers.get_register_at(x as usize));
         assert_eq!(0x1, registers.get_register_at(0xf));
     }
 
