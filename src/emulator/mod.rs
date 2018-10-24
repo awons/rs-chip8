@@ -73,7 +73,7 @@ impl InitializedEmulator {
     pub fn run(&mut self) {
         loop {
             if let Ok(()) = self.chipset.tick() {
-                thread::sleep(time::Duration::from_millis(16));
+                thread::sleep(time::Duration::from_millis(2));
                 continue;
             }
 
