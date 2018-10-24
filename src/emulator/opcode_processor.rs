@@ -84,7 +84,7 @@ pub trait TOpCodesProcessor {
     fn bitop_vx_equal_vy_shl(&self, registers: &mut Registers, x: u8, y: u8);
     fn cond_vx_not_equal_vy(&self, registers: &Registers, program_counter: &mut u16, x: u8, y: u8);
     fn mem_i_equal_nnn(&self, address_register: &mut u16, nnn: u16);
-    fn flow_pc_equal_v0_plus_nnn(&self, program_counter: &mut u16, nnn: u16);
+    fn flow_pc_equal_v0_plus_nnn(&self, program_counter: &mut u16, nnn: u16, registers: &Registers);
     fn rand_vx_equal_rand_and_nn(&self, registers: &mut Registers, x: u8, nn: u8);
     fn draw_vx_vy_n(&self, x: u8, y: u8, n: u8, display: &mut TDisplay, memory: &Memory, address_register: &u16, registers: &mut Registers);
     fn mem_i_equal_i_plus_vx(&self, registers: &mut Registers, address_register: &mut u16, x: u8);
@@ -264,8 +264,8 @@ impl TOpCodesProcessor for OpCodesProcessor {
         *address_register = nnn;
     }
 
-    fn flow_pc_equal_v0_plus_nnn(&self, program_counter: &mut u16, nnn: u16) {
-        *program_counter = nnn;
+    fn flow_pc_equal_v0_plus_nnn(&self, program_counter: &mut u16, nnn: u16, registers: &Registers) {
+        *program_counter = nnn + registers.get_register_at(0) as u16;
     }
 
     fn rand_vx_equal_rand_and_nn(&self, registers: &mut Registers, x: u8, nn: u8) {
@@ -901,9 +901,12 @@ mod test_opcodes_processor {
         let nnn: u16 = 0x200;
         let mut program_counter: u16 = 0x100;
 
-        OpCodesProcessor::new().flow_pc_equal_v0_plus_nnn(&mut program_counter, nnn);
+        let mut registers = Registers::new();
+        registers.set_register_at(0, 0xff);
 
-        assert_eq!(0x200, program_counter);
+        OpCodesProcessor::new().flow_pc_equal_v0_plus_nnn(&mut program_counter, nnn, &registers);
+
+        assert_eq!(0x2ff, program_counter);
     }
 
     #[test]

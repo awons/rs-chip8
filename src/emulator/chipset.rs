@@ -126,7 +126,7 @@ impl <O:TOpCodesProcessor, D:TDisplay, K:TKeyboard> Chipset for Chip8Chipset<O, 
                         self.opcode_processor.mem_i_equal_nnn(&mut self.address_register, opcode.get_address());
                     }
                     (0xb, _, _, _) => {
-                        self.opcode_processor.flow_pc_equal_v0_plus_nnn(&mut self.program_counter, opcode.get_address());
+                        self.opcode_processor.flow_pc_equal_v0_plus_nnn(&mut self.program_counter, opcode.get_address(), &self.registers);
                     }
                     (0xc, _, _, _) => {
                         self.opcode_processor.rand_vx_equal_rand_and_nn(&mut self.registers, opcode.get_x(), opcode.get_short_address());
@@ -368,7 +368,7 @@ mod test_chipset {
         fn mem_i_equal_nnn(&self, _address_register: &mut u16, _nnn: u16) {
             self.set_matched_method("mem_i_equal_nnn");
         }
-        fn flow_pc_equal_v0_plus_nnn(&self, _program_counter: &mut u16, _nnn: u16) {
+        fn flow_pc_equal_v0_plus_nnn(&self, _program_counter: &mut u16, _nnn: u16, _registers: &Registers) {
             self.set_matched_method("flow_pc_equal_v0_plus_nnn");
         }
         fn rand_vx_equal_rand_and_nn(&self, _registers: &mut Registers, _x: u8, _nn: u8) {
