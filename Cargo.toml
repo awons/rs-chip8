@@ -6,6 +6,4 @@ authors = ["Aleksander Wons <aleksander.wons@gmail.com>"]
 [dependencies]
 rand = "^0.5"
 pancurses = "^0.16"
-mio = "^0.6"
-termios = "^0.3"
-libc = "^0.2"
+termion = "1.5.1"

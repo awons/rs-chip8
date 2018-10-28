@@ -1,8 +1,8 @@
-extern crate pancurses;
-
+use termion::raw::{IntoRawMode, RawTerminal};
 use emulator::memory::{Memory};
-use self::pancurses::{Window, initscr, endwin, curs_set};
+use std::io::{Write, Stdout, stdout};
 use std::{ops};
+use std::cell::RefCell;
 
 const DISPLAY_WIDTH: usize = 64;
 const DISPLAY_HEIGHT: usize = 32;
@@ -44,36 +44,35 @@ impl ops::IndexMut<usize> for DisplayMemory {
 
 pub struct Display {
     memory: DisplayMemory,
-    window: Window
+    raw_terminal: RefCell<RawTerminal<Stdout>>
 }
 
 impl Display {
     pub fn new() -> Self {
-
-        let window = initscr();
-        curs_set(0);
+        let mut raw_terminal = stdout().into_raw_mode().unwrap();
+        write!(raw_terminal,
+               "{}{}",
+               termion::clear::All,
+               termion::cursor::Hide);
 
         Self {
             memory: DisplayMemory::new(),
-            window,
+            raw_terminal: RefCell::new(raw_terminal),
         }
     }
 
     fn draw_on_canvas(&self, x: u8, y: u8, pixel: u8) {
-            self.window.mv(y as i32, x as i32);
-
+            let character;
             if pixel == 0 {
-                self.window.printw(" ");
+                character = " ";
             } else {
-                self.window.printw("O");
+                character = "0";
             }
-    }
-}
 
-impl Drop for Display {
-    fn drop(&mut self) {
-        curs_set(1);
-        endwin();
+            write!(self.raw_terminal.borrow_mut(),
+                   "{}{}",
+                   termion::cursor::Goto((x + 1) as u16, (y + 1) as u16),
+                   character);
     }
 }
 
@@ -85,7 +84,9 @@ pub trait TDisplay {
 impl TDisplay for Display {
     fn clear(&mut self) {
         self.memory.clear();
-        self.window.clear();
+        write!(self.raw_terminal.borrow_mut(),
+               "{}",
+               termion::clear::All);
     }
 
     fn draw_sprite(&mut self, start_x: u8, start_y: u8, rows: u8, address_register: &u16, memory: &Memory) -> bool {
@@ -119,8 +120,6 @@ impl TDisplay for Display {
             i += 1;
         }
 
-        self.window.refresh();
-
         is_flipped
     }
 }
@@ -129,6 +128,7 @@ impl TDisplay for Display {
 mod test_display {
     use super::{Display, TDisplay};
     use emulator::memory::{Memory};
+    use std::io::{Stdout};
 
     impl Display {
         fn get_pixel(&self, y: u8, x: u8) -> u8 {

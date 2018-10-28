@@ -1,3 +1,5 @@
+extern crate termion;
+
 mod emulator;
 
 use std::env;
