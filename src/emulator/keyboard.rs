@@ -1,11 +1,14 @@
-use termion::{async_stdin};
+use termion::{async_stdin, AsyncReader};
 use termion::input::TermRead;
 use termion::raw::{IntoRawMode, RawTerminal};
 use termion::event::Key as TermKey;
-use std::io::{Read, Write, Stdout, stdin, stdout};
+use std::io::{Read, Stdout, stdin, stdout};
+use std::cell::RefCell;
 
 pub struct Keyboard {
     _raw_terminal: RawTerminal<Stdout>,
+    async_reader: RefCell<AsyncReader>,
+    bytes_buffer: RefCell<Vec<u8>>
 }
 
 #[derive(Debug, PartialEq, Copy, Clone)]
@@ -32,14 +35,18 @@ impl Keyboard {
     pub fn new() -> Self {
         Keyboard {
             _raw_terminal: stdout().into_raw_mode().unwrap(),
+            async_reader: RefCell::new(async_stdin()),
+            bytes_buffer: RefCell::new(Vec::new())
         }
     }
 
     fn read_key(&self) -> Option<Key> {
-        if let Some(byte_result) = async_stdin().bytes().last() {
-            if let Ok(byte) = byte_result {
-                return self.match_byte(byte)
-            }
+        self.async_reader.borrow_mut().read_to_end(&mut self.bytes_buffer.borrow_mut()).unwrap();
+        let mut buffer = self.bytes_buffer.borrow_mut();
+        let bytes = buffer.drain(..).collect::<Vec<u8>>();
+
+        if let Some(byte) = bytes.last() {
+            self.match_byte(byte.clone());
         }
 
         None
