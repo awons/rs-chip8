@@ -332,7 +332,7 @@ impl TOpCodesProcessor for OpCodesProcessor {
         if let Some(key) = keyboard.get_pressed_key() {
             if registers.get_register_at(x as usize) == key as u8 {
                 *program_counter += 2;
-            }  
+            }
         }
     }
 
@@ -1081,9 +1081,9 @@ mod test_opcodes_processor {
         let mut keyboard = MockedKeyboard{};
         let mut registers = Registers::new();
 
-        OpCodesProcessor::new().keyop_vx_equal_key(&mut keyboard, &mut registers, 0xa);
+        OpCodesProcessor::new().keyop_vx_equal_key(&mut keyboard, &mut registers, 0x1);
 
-        assert_eq!(53, registers.get_register_at(0xa));
+        assert_eq!(0x5, registers.get_register_at(0x1));
     }
 
     #[test]
@@ -1092,9 +1092,9 @@ mod test_opcodes_processor {
         let mut registers = Registers::new();
         let mut program_counter = 0x0;
 
-        registers.set_register_at(0xa, 52);
+        registers.set_register_at(0x1, 0x4);
 
-        OpCodesProcessor::new().keyop_if_key_equal_vx(&mut keyboard, &mut registers, &mut program_counter, 0xa);
+        OpCodesProcessor::new().keyop_if_key_equal_vx(&mut keyboard, &mut registers, &mut program_counter, 0x1);
 
         assert_eq!(0x2, program_counter);
     }
@@ -1105,9 +1105,9 @@ mod test_opcodes_processor {
         let mut registers = Registers::new();
         let mut program_counter = 0x0;
 
-        registers.set_register_at(0xa, 55);
+        registers.set_register_at(0x1, 0x5);
 
-        OpCodesProcessor::new().keyop_if_key_equal_vx(&mut keyboard, &mut registers, &mut program_counter, 0xa);
+        OpCodesProcessor::new().keyop_if_key_equal_vx(&mut keyboard, &mut registers, &mut program_counter, 0x1);
 
         assert_eq!(0x0, program_counter);
     }

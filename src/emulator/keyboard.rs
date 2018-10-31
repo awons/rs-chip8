@@ -5,8 +5,6 @@ use termion::event::Key as TermKey;
 use std::io::{Read, Stdout, stdin, stdout};
 use std::cell::RefCell;
 
-use std::io::Write;
-
 pub struct Keyboard {
     _raw_terminal: RawTerminal<Stdout>,
     async_reader: RefCell<AsyncReader>,
@@ -15,22 +13,22 @@ pub struct Keyboard {
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum Key {
-    Key0 = 48,
-    Key1 = 49,
-    Key2 = 50,
-    Key3 = 51,
-    Key4 = 52,
-    Key5 = 53,
-    Key6 = 54,
-    Key7 = 55,
-    Key8 = 56,
-    Key9 = 57,
-    KeyA = 97,
-    KeyB = 98,
-    KeyC = 99,
-    KeyD = 100,
-    KeyE = 101,
-    KeyF = 102,
+    Key0 = 0x0,
+    Key1 = 0x1,
+    Key2 = 0x2,
+    Key3 = 0x3,
+    Key4 = 0x4,
+    Key5 = 0x5,
+    Key6 = 0x6,
+    Key7 = 0x7,
+    Key8 = 0x8,
+    Key9 = 0x9,
+    KeyA = 0xa,
+    KeyB = 0xb,
+    KeyC = 0xc,
+    KeyD = 0xd,
+    KeyE = 0xe,
+    KeyF = 0xf,
 }
 
 impl Keyboard {
