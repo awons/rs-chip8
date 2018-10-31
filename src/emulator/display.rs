@@ -93,10 +93,17 @@ impl TDisplay for Display {
         let mut is_flipped = false;
         let mut i = 0;
 
-        for display_y in start_y..rows+start_y {
+        for sprite_position_y in 0..rows {
             let sprite_new_row = memory.read(*address_register + i);
-
             let mask: u8 = 0b1000_0000;
+
+            let mut display_y;
+            if (start_y + sprite_position_y + 1) as usize > DISPLAY_HEIGHT {
+                display_y = sprite_position_y;
+            } else {
+                display_y = start_y + sprite_position_y;
+            }
+
             for sprite_position_x in 0..SPRITE_WIDTH {
                 let mut display_x;
                 if (start_x + sprite_position_x + 1) as usize > DISPLAY_WIDTH {

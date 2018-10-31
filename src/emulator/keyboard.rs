@@ -5,6 +5,8 @@ use termion::event::Key as TermKey;
 use std::io::{Read, Stdout, stdin, stdout};
 use std::cell::RefCell;
 
+use std::io::Write;
+
 pub struct Keyboard {
     _raw_terminal: RawTerminal<Stdout>,
     async_reader: RefCell<AsyncReader>,
@@ -46,7 +48,7 @@ impl Keyboard {
         let bytes = buffer.drain(..).collect::<Vec<u8>>();
 
         if let Some(byte) = bytes.last() {
-            self.match_byte(byte.clone());
+            return self.match_byte(byte.clone());
         }
 
         None
@@ -57,7 +59,6 @@ impl Keyboard {
             if let Some(k) = self.match_key(key.unwrap()) {
                 return k
             }
-            continue;
         }
 
         unreachable!()

@@ -329,25 +329,19 @@ impl TOpCodesProcessor for OpCodesProcessor {
     }
 
     fn keyop_if_key_equal_vx(&self, keyboard: &mut TKeyboard, registers: &Registers, program_counter: &mut u16, x: u8) {
-        match keyboard.get_pressed_key() {
-            Some(key) => {
-                if registers.get_register_at(x as usize) == key as u8 {
-                    *program_counter += 2;
-                }        
-            },
-            _ => {}
-        };
+        if let Some(key) = keyboard.get_pressed_key() {
+            if registers.get_register_at(x as usize) == key as u8 {
+                *program_counter += 2;
+            }  
+        }
     }
 
     fn keyop_if_key_not_equal_vx(&self, keyboard: &mut TKeyboard, registers: &Registers, program_counter: &mut u16, x: u8) {
-        match keyboard.get_pressed_key() {
-            Some(key) => {
-                if registers.get_register_at(x as usize) != key as u8 {
-                    *program_counter += 2;
-                }        
-            },
-            _ => {}
-        };
+        if let Some(key) = keyboard.get_pressed_key() {
+            if registers.get_register_at(x as usize) != key as u8 {
+                *program_counter += 2;
+            }
+        }
     }
 
     fn keyop_vx_equal_key(&self, keyboard: &mut TKeyboard, registers: &mut Registers, x: u8) {
