@@ -135,7 +135,6 @@ impl TDisplay for Display {
 mod test_display {
     use super::{Display, TDisplay};
     use emulator::memory::{Memory};
-    use std::io::{Stdout};
 
     impl Display {
         fn get_pixel(&self, y: u8, x: u8) -> u8 {
