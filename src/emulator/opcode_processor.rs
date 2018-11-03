@@ -7,8 +7,6 @@ use emulator::keyboard::TKeyboard;
 use std::fmt;
 use std::result;
 
-use std::io::Write;
-
 #[derive(Debug, PartialEq)]
 pub struct OpCode {
     opcode: u16,
