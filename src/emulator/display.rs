@@ -122,13 +122,6 @@ impl TDisplay for Display {
                 }
 
                 self.draw_on_canvas(display_x, display_y, xor_pixel);
-
-                let mut file = std::fs::OpenOptions::new()
-                    .create(true)
-                    .append(true)
-                    .open("debug.log")
-                    .unwrap();
-                write!(file, "Start {}:{}\t\tprint at {}:{}\n", start_x, start_y, display_x, display_y);
             }
 
             i += 1;
