@@ -99,7 +99,7 @@ impl TDisplay for Display {
 
             let mut display_y;
             if (start_y + sprite_position_y + 1) as usize > DISPLAY_HEIGHT {
-                display_y = sprite_position_y;
+                display_y = start_y + sprite_position_y - DISPLAY_HEIGHT as u8;
             } else {
                 display_y = start_y + sprite_position_y;
             }
@@ -122,6 +122,13 @@ impl TDisplay for Display {
                 }
 
                 self.draw_on_canvas(display_x, display_y, xor_pixel);
+
+                let mut file = std::fs::OpenOptions::new()
+                    .create(true)
+                    .append(true)
+                    .open("debug.log")
+                    .unwrap();
+                write!(file, "Start {}:{}\t\tprint at {}:{}\n", start_x, start_y, display_x, display_y);
             }
 
             i += 1;
