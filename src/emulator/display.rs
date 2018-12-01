@@ -53,7 +53,8 @@ impl Display {
         write!(raw_terminal,
                "{}{}",
                termion::clear::All,
-               termion::cursor::Hide);
+               termion::cursor::Hide)
+            .unwrap();
 
         Self {
             memory: DisplayMemory::new(),
@@ -72,7 +73,8 @@ impl Display {
             write!(self.raw_terminal.borrow_mut(),
                    "{}{}",
                    termion::cursor::Goto((x + 1) as u16, (y + 1) as u16),
-                   character);
+                   character)
+                .unwrap();
     }
 }
 
@@ -86,7 +88,8 @@ impl TDisplay for Display {
         self.memory.clear();
         write!(self.raw_terminal.borrow_mut(),
                "{}",
-               termion::clear::All);
+               termion::clear::All)
+            .unwrap();
     }
 
     fn draw_sprite(&mut self, start_x: u8, start_y: u8, rows: u8, address_register: &u16, memory: &Memory) -> bool {

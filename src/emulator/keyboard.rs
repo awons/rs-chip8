@@ -29,6 +29,7 @@ pub enum Key {
     KeyD = 0xd,
     KeyE = 0xe,
     KeyF = 0xf,
+    KeyESC = 0xff,
 }
 
 impl Keyboard {
@@ -80,9 +81,7 @@ impl Keyboard {
             120 => Some(Key::Key0),
             99 => Some(Key::KeyB),
             118 => Some(Key::KeyF),
-            27 => {
-                std::process::exit(0);
-            },
+            27 => Some(Key::KeyESC),
             _ => None,
         }
     }

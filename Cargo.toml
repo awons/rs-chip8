@@ -5,5 +5,4 @@ authors = ["Aleksander Wons <aleksander.wons@gmail.com>"]
 
 [dependencies]
 rand = "^0.5"
-pancurses = "^0.16"
 termion = "1.5.1"

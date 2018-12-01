@@ -2,7 +2,7 @@ extern crate rand;
 
 use emulator::memory::{Registers, Stack, Memory};
 use emulator::display::TDisplay;
-use emulator::keyboard::TKeyboard;
+use emulator::keyboard::{TKeyboard, Key};
 
 use std::fmt;
 use std::result;
@@ -94,7 +94,7 @@ pub trait TOpCodesProcessor {
     fn mem_reg_load(&self, registers: &mut Registers, memory: &Memory, address_register: &mut u16, x: u8);
     fn keyop_if_key_equal_vx(&self, keyboard: &mut TKeyboard, registers: &Registers, program_counter: &mut u16, x: u8);
     fn keyop_if_key_not_equal_vx(&self, keyboard: &mut TKeyboard, registers: &Registers, program_counter: &mut u16, x: u8);
-    fn keyop_vx_equal_key(&self, keyboard: &mut TKeyboard, registers: &mut Registers, x: u8);
+    fn keyop_vx_equal_key(&self, keyboard: &mut TKeyboard, registers: &mut Registers, x: u8, program_counter: &mut u16);
     fn timer_vx_equal_get_delay(&self, delay_timer: &u8, registers: &mut Registers, x: u8);
     fn timer_delay_timer_equal_vx(&self, delay_timer: &mut u8, registers: &Registers, x: u8);
     fn sound_sound_timer_equal_vx(&self);
@@ -330,23 +330,35 @@ impl TOpCodesProcessor for OpCodesProcessor {
 
     fn keyop_if_key_equal_vx(&self, keyboard: &mut TKeyboard, registers: &Registers, program_counter: &mut u16, x: u8) {
         if let Some(key) = keyboard.get_pressed_key() {
-            if registers.get_register_at(x as usize) == key as u8 {
-                *program_counter += 2;
+            match key {
+                Key::KeyESC => *program_counter = u16::max_value() - 2,
+                key => {
+                    if registers.get_register_at(x as usize) == key as u8 {
+                        *program_counter += 2;
+                    }
+                }
             }
         }
     }
 
     fn keyop_if_key_not_equal_vx(&self, keyboard: &mut TKeyboard, registers: &Registers, program_counter: &mut u16, x: u8) {
         if let Some(key) = keyboard.get_pressed_key() {
-            if registers.get_register_at(x as usize) != key as u8 {
-                *program_counter += 2;
+            match key {
+                Key::KeyESC => *program_counter = u16::max_value() - 2,
+                key => {
+                    if registers.get_register_at(x as usize) != key as u8 {
+                        *program_counter += 2;
+                    }
+                }
             }
         }
     }
 
-    fn keyop_vx_equal_key(&self, keyboard: &mut TKeyboard, registers: &mut Registers, x: u8) {
-        let key = keyboard.wait_for_key_press();
-        registers.set_register_at(x as usize, key as u8);
+    fn keyop_vx_equal_key(&self, keyboard: &mut TKeyboard, registers: &mut Registers, x: u8, program_counter: &mut u16) {
+        match keyboard.wait_for_key_press() {
+            Key::KeyESC => *program_counter = u16::max_value() - 2,
+            key => registers.set_register_at(x as usize, key as u8),
+        }
     }
 
     fn timer_vx_equal_get_delay(&self, delay_timer: &u8, registers: &mut Registers, x: u8) {
@@ -1080,8 +1092,9 @@ mod test_opcodes_processor {
     fn test_keyop_vx_equal_key() {
         let mut keyboard = MockedKeyboard{};
         let mut registers = Registers::new();
+        let mut program_counter = 0;
 
-        OpCodesProcessor::new().keyop_vx_equal_key(&mut keyboard, &mut registers, 0x1);
+        OpCodesProcessor::new().keyop_vx_equal_key(&mut keyboard, &mut registers, 0x1, &mut program_counter);
 
         assert_eq!(0x5, registers.get_register_at(0x1));
     }

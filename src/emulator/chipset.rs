@@ -159,7 +159,7 @@ impl <O:TOpCodesProcessor, D:TDisplay, K:TKeyboard> Chipset for Chip8Chipset<O, 
                         self.program_counter += 2;
                     }
                     (0xf, _, 0x0, 0xa) => {
-                        self.opcode_processor.keyop_vx_equal_key(&mut self.keyboard, &mut self.registers, opcode.get_x());
+                        self.opcode_processor.keyop_vx_equal_key(&mut self.keyboard, &mut self.registers, opcode.get_x(), &mut self.program_counter);
                         self.program_counter += 2;
                     }
                     (0xf, _, 0x1, 0x5) => {
@@ -420,7 +420,7 @@ mod test_chipset {
         fn keyop_if_key_not_equal_vx(&self, _keyboard: &mut TKeyboard, _registers: &Registers, _program_counter: &mut u16, _x: u8) {
             self.set_matched_method("keyop_if_key_not_equal_vx");
         }
-        fn keyop_vx_equal_key(&self, _keyboard: &mut TKeyboard, _registers: &mut Registers, _x: u8) {
+        fn keyop_vx_equal_key(&self, _keyboard: &mut TKeyboard, _registers: &mut Registers, _x: u8, _program_counter: &mut u16) {
             self.set_matched_method("keyop_vx_equal_key");
         }
         fn timer_vx_equal_get_delay(&self, _delay_timer: &u8, _registers: &mut Registers, _x: u8) {
