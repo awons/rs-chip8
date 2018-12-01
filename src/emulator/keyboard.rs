@@ -1,12 +1,10 @@
 use termion::{async_stdin, AsyncReader};
 use termion::input::TermRead;
-use termion::raw::{IntoRawMode, RawTerminal};
 use termion::event::Key as TermKey;
-use std::io::{Read, Stdout, stdin, stdout};
+use std::io::{Read, stdin};
 use std::cell::RefCell;
 
 pub struct Keyboard {
-    _raw_terminal: RawTerminal<Stdout>,
     async_reader: RefCell<AsyncReader>,
     bytes_buffer: RefCell<Vec<u8>>
 }
@@ -35,7 +33,6 @@ pub enum Key {
 impl Keyboard {
     pub fn new() -> Self {
         Keyboard {
-            _raw_terminal: stdout().into_raw_mode().unwrap(),
             async_reader: RefCell::new(async_stdin()),
             bytes_buffer: RefCell::new(Vec::new())
         }

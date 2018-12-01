@@ -50,23 +50,17 @@ pub struct Display {
 
 impl Display {
     pub fn new() -> Self {
-        let mut raw_terminal = AlternateScreen::from(stdout().into_raw_mode().unwrap());
-        write!(raw_terminal,
+        let mut terminal = AlternateScreen::from(stdout().into_raw_mode().unwrap());
+        write!(terminal,
                "{}{}",
                termion::clear::All,
                termion::cursor::Hide)
             .unwrap();
-        
-        write!(raw_terminal, "{}", ToMainScreen).unwrap();
-        write!(raw_terminal,
-               "{}{}",
-               termion::clear::All,
-               termion::cursor::Hide)
-            .unwrap();
+        terminal.flush().unwrap();
 
         Self {
             memory: DisplayMemory::new(),
-            raw_terminal: RefCell::new(raw_terminal),
+            raw_terminal: RefCell::new(terminal),
         }
     }
 
@@ -89,11 +83,13 @@ impl Display {
 impl Drop for Display {
     fn drop(&mut self) {
         let mut terminal = self.raw_terminal.borrow_mut();
-        write!(terminal, "{}", ToMainScreen).unwrap();
-        write!(terminal, "{}{}{}", termion::clear::All, termion::cursor::Show, termion::cursor::Goto(1, 1)).unwrap();
 
-        write!(terminal, "{}", ToAlternateScreen).unwrap();
-        write!(terminal, "{}{}{}", termion::clear::All, termion::cursor::Show, termion::cursor::Goto(1, 1)).unwrap();
+        write!(terminal,
+               "{}{}",
+               termion::clear::All,
+               termion::cursor::Show)
+            .unwrap();
+        terminal.flush().unwrap();
     }
 }
 
@@ -105,10 +101,12 @@ pub trait TDisplay {
 impl TDisplay for Display {
     fn clear(&mut self) {
         self.memory.clear();
-        write!(self.raw_terminal.borrow_mut(),
+        let mut terminal = self.raw_terminal.borrow_mut();
+        write!(terminal,
                "{}",
                termion::clear::All)
             .unwrap();
+        terminal.flush().unwrap();
     }
 
     fn draw_sprite(&mut self, start_x: u8, start_y: u8, rows: u8, address_register: &u16, memory: &Memory) -> bool {
