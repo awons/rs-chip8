@@ -1,3 +1,4 @@
+use termion::screen::*;
 use termion::raw::{IntoRawMode, RawTerminal};
 use emulator::memory::{Memory};
 use std::io::{Write, Stdout, stdout};
@@ -44,12 +45,19 @@ impl ops::IndexMut<usize> for DisplayMemory {
 
 pub struct Display {
     memory: DisplayMemory,
-    raw_terminal: RefCell<RawTerminal<Stdout>>
+    raw_terminal: RefCell<AlternateScreen<RawTerminal<Stdout>>>
 }
 
 impl Display {
     pub fn new() -> Self {
-        let mut raw_terminal = stdout().into_raw_mode().unwrap();
+        let mut raw_terminal = AlternateScreen::from(stdout().into_raw_mode().unwrap());
+        write!(raw_terminal,
+               "{}{}",
+               termion::clear::All,
+               termion::cursor::Hide)
+            .unwrap();
+        
+        write!(raw_terminal, "{}", ToMainScreen).unwrap();
         write!(raw_terminal,
                "{}{}",
                termion::clear::All,
@@ -75,6 +83,17 @@ impl Display {
                    termion::cursor::Goto((x + 1) as u16, (y + 1) as u16),
                    character)
                 .unwrap();
+    }
+}
+
+impl Drop for Display {
+    fn drop(&mut self) {
+        let mut terminal = self.raw_terminal.borrow_mut();
+        write!(terminal, "{}", ToMainScreen).unwrap();
+        write!(terminal, "{}{}{}", termion::clear::All, termion::cursor::Show, termion::cursor::Goto(1, 1)).unwrap();
+
+        write!(terminal, "{}", ToAlternateScreen).unwrap();
+        write!(terminal, "{}{}{}", termion::clear::All, termion::cursor::Show, termion::cursor::Goto(1, 1)).unwrap();
     }
 }
 
