@@ -1,7 +1,5 @@
 use termion::{async_stdin, AsyncReader};
-use termion::input::TermRead;
-use termion::event::Key as TermKey;
-use std::io::{Read, stdin};
+use std::io::Read;
 use std::cell::RefCell;
 
 pub struct Keyboard {
@@ -51,13 +49,11 @@ impl Keyboard {
     }
 
     fn read_key_wait(&self) -> Key {
-        for key in stdin().keys() {
-            if let Some(k) = self.match_key(key.unwrap()) {
-                return k
+        loop {
+            if let Some(key) = self.read_key() {
+                return key;
             }
         }
-
-        unreachable!()
     }
 
     fn match_byte(&self, key: u8) -> Option<Key> {
@@ -79,31 +75,6 @@ impl Keyboard {
             99 => Some(Key::KeyB),
             118 => Some(Key::KeyF),
             27 => Some(Key::KeyESC),
-            _ => None,
-        }
-    }
-
-    fn match_key(&self, key: TermKey) -> Option<Key> {
-        match key {
-            TermKey::Char('1') => Some(Key::Key1),
-            TermKey::Char('2') => Some(Key::Key2),
-            TermKey::Char('3') => Some(Key::Key3),
-            TermKey::Char('4') => Some(Key::KeyC),
-            TermKey::Char('q') => Some(Key::Key4),
-            TermKey::Char('w') => Some(Key::Key5),
-            TermKey::Char('e') => Some(Key::Key6),
-            TermKey::Char('r') => Some(Key::KeyD),
-            TermKey::Char('a') => Some(Key::Key7),
-            TermKey::Char('s') => Some(Key::Key8),
-            TermKey::Char('d') => Some(Key::Key9),
-            TermKey::Char('f') => Some(Key::KeyD),
-            TermKey::Char('z') => Some(Key::KeyA),
-            TermKey::Char('x') => Some(Key::Key0),
-            TermKey::Char('c') => Some(Key::KeyB),
-            TermKey::Char('v') => Some(Key::KeyF),
-            TermKey::Esc => {
-                std::process::exit(0);
-            },
             _ => None,
         }
     }
