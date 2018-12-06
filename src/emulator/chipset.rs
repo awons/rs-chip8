@@ -207,9 +207,9 @@ impl <O:TOpCodesProcessor, D:TDisplay, K:TKeyboard> Chipset for Chip8Chipset<O, 
         if self.program_counter >= (MEMORY_SIZE as u16) {
             return None;
         }
-        
-        let data = (self.memory.read(self.program_counter) as u16) << 8
-            | (self.memory.read(self.program_counter + 1) as u16);
+
+        let data = ((self.memory.read(self.program_counter) as u16) << 8)
+            + (self.memory.read(self.program_counter + 1) as u16);
 
         Some(OpCode::from_data(data))
     }
