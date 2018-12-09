@@ -69,7 +69,7 @@ impl Display {
             if pixel == 0 {
                 character = " ";
             } else {
-                character = "0";
+                character = "*";
             }
 
             write!(self.raw_terminal.borrow_mut(),

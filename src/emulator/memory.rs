@@ -1,4 +1,4 @@
-pub const MEMORY_SIZE: usize = 0x1000;
+pub const MEMORY_SIZE: usize = 0xfff;
 const STACK_SIZE: usize = 0xf;
 const REGISTERS_COUNT: usize = 0x10;
 
