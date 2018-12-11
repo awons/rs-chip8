@@ -6,7 +6,9 @@ use std::{ops};
 use std::cell::RefCell;
 
 const DISPLAY_WIDTH: usize = 64;
+const DISPLAY_MAX_X: u8 = DISPLAY_WIDTH as u8 - 1;
 const DISPLAY_HEIGHT: usize = 32;
+const DISPLAY_MAX_Y: u8 = DISPLAY_HEIGHT as u8 - 1;
 const SPRITE_WIDTH: u8 = 8;
 
 struct DisplayMemory {
@@ -111,26 +113,41 @@ impl TDisplay for Display {
 
     fn draw_sprite(&mut self, start_x: u8, start_y: u8, rows: u8, address_register: &u16, memory: &Memory) -> bool {
         let mut is_flipped = false;
-        let mut i = 0;
 
-        for sprite_position_y in 0..rows {
-            let sprite_new_row = memory.read(*address_register + i);
+        let mut display_y;
+        if start_y > DISPLAY_MAX_Y as u8 {
+            display_y = start_y % (DISPLAY_HEIGHT as u8);
+        } else {
+            display_y = start_y; 
+        }
+
+        /*let mut file = std::fs::OpenOptions::new()
+                    .create(true)
+                    .append(true)
+                    .open("dump.log")
+                    .unwrap();
+        write!(file, "draw sprite\n").unwrap();*/
+
+        for row in 0..rows {
+            //write!(file, "row {}\n", row).unwrap();
+            let sprite_new_row = memory.read(*address_register + row as u16);
             let mask: u8 = 0b1000_0000;
 
-            let mut display_y;
-            if (start_y + sprite_position_y + 1) as usize > DISPLAY_HEIGHT {
-                display_y = start_y + sprite_position_y - DISPLAY_HEIGHT as u8;
-            } else {
-                display_y = start_y + sprite_position_y;
+            if display_y > DISPLAY_MAX_Y {
+                continue;
             }
 
+            let mut display_x;
+            if start_x > DISPLAY_MAX_X as u8 {
+                display_x = start_x % (DISPLAY_WIDTH as u8)
+            } else {
+                display_x = start_x;
+            }
             for sprite_position_x in 0..SPRITE_WIDTH {
-                let mut display_x;
-                if (start_x + sprite_position_x + 1) as usize > DISPLAY_WIDTH {
-                    display_x = sprite_position_x;
-                } else {
-                    display_x = start_x + sprite_position_x;
+                if display_x > DISPLAY_MAX_X {
+                    continue;
                 }
+
                 let current_mask = mask.rotate_right(sprite_position_x as u32);
 
                 let old_pixel = self.memory[display_y as usize][display_x as usize];
@@ -141,10 +158,11 @@ impl TDisplay for Display {
                     is_flipped = true;
                 }
 
+                //write!(file, "{}:{} to draw {}; old {}; new {} is flipped {:?}\n", display_x, display_y, xor_pixel, old_pixel, new_pixel, is_flipped).unwrap();
                 self.draw_on_canvas(display_x, display_y, xor_pixel);
+                display_x += 1;
             }
-
-            i += 1;
+            display_y += 1;
         }
 
         is_flipped
