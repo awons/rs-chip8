@@ -1,8 +1,8 @@
 extern crate rand;
 
-use emulator::memory::{Registers, Stack, Memory};
 use emulator::display::TDisplay;
-use emulator::keyboard::{TKeyboard, Key};
+use emulator::keyboard::{Key, TKeyboard};
+use emulator::memory::{Memory, Registers, Stack};
 
 use std::fmt;
 use std::result;
@@ -58,7 +58,7 @@ impl fmt::LowerHex for OpCode {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> result::Result<(), fmt::Error> {
         let string = format!("{:#06x}", self.opcode);
         formatter.write_str(&string)?;
-        
+
         Ok(())
     }
 }
@@ -86,15 +86,54 @@ pub trait TOpCodesProcessor {
     fn mem_i_equal_nnn(&self, address_register: &mut u16, nnn: u16);
     fn flow_pc_equal_v0_plus_nnn(&self, program_counter: &mut u16, nnn: u16, registers: &Registers);
     fn rand_vx_equal_rand_and_nn(&self, registers: &mut Registers, x: u8, nn: u8);
-    fn draw_vx_vy_n(&self, x: u8, y: u8, n: u8, display: &mut TDisplay, memory: &Memory, address_register: &u16, registers: &mut Registers);
+    fn draw_vx_vy_n(
+        &self,
+        x: u8,
+        y: u8,
+        n: u8,
+        display: &mut TDisplay,
+        memory: &Memory,
+        address_register: &u16,
+        registers: &mut Registers,
+    );
     fn mem_i_equal_i_plus_vx(&self, registers: &mut Registers, address_register: &mut u16, x: u8);
     fn mem_i_equal_sprite_addr_vx(&self, registers: &Registers, address_register: &mut u16, x: u8);
     fn mem_bcd(&self, registers: &Registers, address_register: &u16, memory: &mut Memory, x: u8);
-    fn mem_reg_dump(&self, registers: &Registers, memory: &mut Memory, address_register: &mut u16, x: u8);
-    fn mem_reg_load(&self, registers: &mut Registers, memory: &Memory, address_register: &mut u16, x: u8);
-    fn keyop_if_key_equal_vx(&self, keyboard: &mut TKeyboard, registers: &Registers, program_counter: &mut u16, x: u8);
-    fn keyop_if_key_not_equal_vx(&self, keyboard: &mut TKeyboard, registers: &Registers, program_counter: &mut u16, x: u8);
-    fn keyop_vx_equal_key(&self, keyboard: &mut TKeyboard, registers: &mut Registers, x: u8, program_counter: &mut u16);
+    fn mem_reg_dump(
+        &self,
+        registers: &Registers,
+        memory: &mut Memory,
+        address_register: &mut u16,
+        x: u8,
+    );
+    fn mem_reg_load(
+        &self,
+        registers: &mut Registers,
+        memory: &Memory,
+        address_register: &mut u16,
+        x: u8,
+    );
+    fn keyop_if_key_equal_vx(
+        &self,
+        keyboard: &mut TKeyboard,
+        registers: &Registers,
+        program_counter: &mut u16,
+        x: u8,
+    );
+    fn keyop_if_key_not_equal_vx(
+        &self,
+        keyboard: &mut TKeyboard,
+        registers: &Registers,
+        program_counter: &mut u16,
+        x: u8,
+    );
+    fn keyop_vx_equal_key(
+        &self,
+        keyboard: &mut TKeyboard,
+        registers: &mut Registers,
+        x: u8,
+        program_counter: &mut u16,
+    );
     fn timer_vx_equal_get_delay(&self, delay_timer: &u8, registers: &mut Registers, x: u8);
     fn timer_delay_timer_equal_vx(&self, delay_timer: &mut u8, registers: &Registers, x: u8);
     fn sound_sound_timer_equal_vx(&self);
@@ -134,7 +173,13 @@ impl TOpCodesProcessor for OpCodesProcessor {
         *program_counter += 2;
     }
 
-    fn cond_vx_not_equal_nn(&self, registers: &Registers, program_counter: &mut u16, x: u8, nn: u8) {
+    fn cond_vx_not_equal_nn(
+        &self,
+        registers: &Registers,
+        program_counter: &mut u16,
+        x: u8,
+        nn: u8,
+    ) {
         if registers.get_register_at(x as usize) == nn {
             return;
         }
@@ -149,7 +194,7 @@ impl TOpCodesProcessor for OpCodesProcessor {
 
         *program_counter += 2;
     }
-    
+
     fn const_vx_equal_nn(&self, registers: &mut Registers, x: u8, nn: u8) {
         registers.set_register_at(x as usize, nn);
     }
@@ -264,7 +309,12 @@ impl TOpCodesProcessor for OpCodesProcessor {
         *address_register = nnn;
     }
 
-    fn flow_pc_equal_v0_plus_nnn(&self, program_counter: &mut u16, nnn: u16, registers: &Registers) {
+    fn flow_pc_equal_v0_plus_nnn(
+        &self,
+        program_counter: &mut u16,
+        nnn: u16,
+        registers: &Registers,
+    ) {
         *program_counter = nnn + registers.get_register_at(0) as u16;
     }
 
@@ -272,7 +322,16 @@ impl TOpCodesProcessor for OpCodesProcessor {
         registers.set_register_at(x as usize, rand::random::<u8>() & nn);
     }
 
-    fn draw_vx_vy_n(&self, vx: u8, vy: u8, n: u8, display: &mut TDisplay, memory: &Memory, address_register: &u16, registers: &mut Registers) {
+    fn draw_vx_vy_n(
+        &self,
+        vx: u8,
+        vy: u8,
+        n: u8,
+        display: &mut TDisplay,
+        memory: &Memory,
+        address_register: &u16,
+        registers: &mut Registers,
+    ) {
         let x = registers.get_register_at(vx as usize);
         let y = registers.get_register_at(vy as usize);
         let collision_detected = display.draw_sprite(x, y, n, address_register, memory);
@@ -292,7 +351,7 @@ impl TOpCodesProcessor for OpCodesProcessor {
         *address_register = result as u16;
     }
 
-    fn mem_i_equal_sprite_addr_vx(&self, registers: &Registers, address_register: &mut u16, x:u8) {
+    fn mem_i_equal_sprite_addr_vx(&self, registers: &Registers, address_register: &mut u16, x: u8) {
         let x = registers.get_register_at(x as usize);
 
         if x > 0xf {
@@ -314,21 +373,39 @@ impl TOpCodesProcessor for OpCodesProcessor {
         memory.write(*address_register + 0x2, ones);
     }
 
-    fn mem_reg_dump(&self, registers: &Registers, memory: &mut Memory, address_register: &mut u16, x: u8) {
-        for z in 0x0..x+0x1 {
+    fn mem_reg_dump(
+        &self,
+        registers: &Registers,
+        memory: &mut Memory,
+        address_register: &mut u16,
+        x: u8,
+    ) {
+        for z in 0x0..x + 0x1 {
             memory.write(*address_register, registers.get_register_at(z as usize));
             *address_register += 1;
         }
     }
 
-    fn mem_reg_load(&self, registers: &mut Registers, memory: &Memory, address_register: &mut u16, x: u8) {
-        for z in 0x0..x+0x1 {
+    fn mem_reg_load(
+        &self,
+        registers: &mut Registers,
+        memory: &Memory,
+        address_register: &mut u16,
+        x: u8,
+    ) {
+        for z in 0x0..x + 0x1 {
             registers.set_register_at(z as usize, memory.read(*address_register));
             *address_register += 1;
         }
     }
 
-    fn keyop_if_key_equal_vx(&self, keyboard: &mut TKeyboard, registers: &Registers, program_counter: &mut u16, x: u8) {
+    fn keyop_if_key_equal_vx(
+        &self,
+        keyboard: &mut TKeyboard,
+        registers: &Registers,
+        program_counter: &mut u16,
+        x: u8,
+    ) {
         if let Some(key) = keyboard.get_pressed_key() {
             match key {
                 Key::KeyESC => *program_counter = u16::max_value() - 2,
@@ -341,7 +418,13 @@ impl TOpCodesProcessor for OpCodesProcessor {
         }
     }
 
-    fn keyop_if_key_not_equal_vx(&self, keyboard: &mut TKeyboard, registers: &Registers, program_counter: &mut u16, x: u8) {
+    fn keyop_if_key_not_equal_vx(
+        &self,
+        keyboard: &mut TKeyboard,
+        registers: &Registers,
+        program_counter: &mut u16,
+        x: u8,
+    ) {
         if let Some(key) = keyboard.get_pressed_key() {
             match key {
                 Key::KeyESC => *program_counter = u16::max_value() - 2,
@@ -354,7 +437,13 @@ impl TOpCodesProcessor for OpCodesProcessor {
         }
     }
 
-    fn keyop_vx_equal_key(&self, keyboard: &mut TKeyboard, registers: &mut Registers, x: u8, program_counter: &mut u16) {
+    fn keyop_vx_equal_key(
+        &self,
+        keyboard: &mut TKeyboard,
+        registers: &mut Registers,
+        x: u8,
+        program_counter: &mut u16,
+    ) {
         match keyboard.wait_for_key_press() {
             Key::KeyESC => *program_counter = u16::max_value() - 2,
             key => registers.set_register_at(x as usize, key as u8),
@@ -373,7 +462,6 @@ impl TOpCodesProcessor for OpCodesProcessor {
         //TODO Implement
     }
 }
-
 
 #[cfg(test)]
 mod test_opcode {
@@ -425,9 +513,9 @@ mod test_opcode {
 #[cfg(test)]
 mod test_opcodes_processor {
     use super::*;
-    use emulator::memory::{Memory, Stack, Registers};
     use emulator::display::TDisplay;
-    use emulator::keyboard::{TKeyboard, Key};
+    use emulator::keyboard::{Key, TKeyboard};
+    use emulator::memory::{Memory, Registers, Stack};
 
     struct MockedDisplay {
         draw_sprite_called: bool,
@@ -444,7 +532,14 @@ mod test_opcodes_processor {
     }
 
     impl TDisplay for MockedDisplay {
-        fn draw_sprite(&mut self, x: u8, _y: u8, _rows: u8, _address_register: &u16, _memory: &Memory) -> bool {
+        fn draw_sprite(
+            &mut self,
+            x: u8,
+            _y: u8,
+            _rows: u8,
+            _address_register: &u16,
+            _memory: &Memory,
+        ) -> bool {
             self.draw_sprite_called = true;
 
             if x == 10 {
@@ -612,10 +707,10 @@ mod test_opcodes_processor {
     #[test]
     fn test_const_vx_equal_nn() {
         let x: u8 = 0x2;
-        let nn:u8 = 0x10;
+        let nn: u8 = 0x10;
 
         let mut registers = Registers::new();
-        
+
         OpCodesProcessor::new().const_vx_equal_nn(&mut registers, x, nn);
 
         assert_eq!(0x10, registers.get_register_at(x as usize));
@@ -713,7 +808,6 @@ mod test_opcodes_processor {
 
         assert_eq!(0x19, registers.get_register_at(x as usize));
         assert_eq!(0x0, registers.get_register_at(0xf));
-
     }
 
     #[test]
@@ -974,7 +1068,11 @@ mod test_opcodes_processor {
         let mut registers = Registers::new();
 
         registers.set_register_at(x as usize, 0x4);
-        OpCodesProcessor::new().mem_i_equal_sprite_addr_vx(&mut registers, &mut address_register, x);
+        OpCodesProcessor::new().mem_i_equal_sprite_addr_vx(
+            &mut registers,
+            &mut address_register,
+            x,
+        );
 
         assert_eq!(0x14, address_register);
     }
@@ -988,7 +1086,11 @@ mod test_opcodes_processor {
         let mut registers = Registers::new();
 
         registers.set_register_at(x as usize, 0xa1);
-        OpCodesProcessor::new().mem_i_equal_sprite_addr_vx(&mut registers, &mut address_register, x);
+        OpCodesProcessor::new().mem_i_equal_sprite_addr_vx(
+            &mut registers,
+            &mut address_register,
+            x,
+        );
     }
 
     #[test]
@@ -1029,13 +1131,13 @@ mod test_opcodes_processor {
         let mut registers = Registers::new();
         let mut address_register: u16 = 0x0;
 
-        for z in 0x0..0xf+0x1 {
+        for z in 0x0..0xf + 0x1 {
             registers.set_register_at(z as usize, 0xf - z);
         }
 
         OpCodesProcessor::new().mem_reg_dump(&registers, &mut memory, &mut address_register, x);
 
-        for z in 0x0..0xf+0x1 {
+        for z in 0x0..0xf + 0x1 {
             assert_eq!(0xf - z, memory.read(z as u16));
         }
     }
@@ -1047,13 +1149,13 @@ mod test_opcodes_processor {
         let mut registers = Registers::new();
         let mut address_register: u16 = 0x0;
 
-        for z in 0x0..x+0x1 {
+        for z in 0x0..x + 0x1 {
             memory.write(z as u16, 0xf - z);
         }
 
         OpCodesProcessor::new().mem_reg_load(&mut registers, &memory, &mut address_register, x);
 
-        for z in 0x0..x+0x1 {
+        for z in 0x0..x + 0x1 {
             assert_eq!(0xf - z, registers.get_register_at(z as usize));
         }
     }
@@ -1067,7 +1169,15 @@ mod test_opcodes_processor {
 
         registers.set_register_at(0, 10);
 
-        OpCodesProcessor::new().draw_vx_vy_n(0, 1, 3, &mut display, &mut memory, &address_register, &mut registers);
+        OpCodesProcessor::new().draw_vx_vy_n(
+            0,
+            1,
+            3,
+            &mut display,
+            &mut memory,
+            &address_register,
+            &mut registers,
+        );
 
         assert!(display.draw_sprite_called);
         assert_eq!(0x0, registers.get_register_at(0xf));
@@ -1082,7 +1192,15 @@ mod test_opcodes_processor {
 
         registers.set_register_at(0, 11);
 
-        OpCodesProcessor::new().draw_vx_vy_n(0, 1, 3, &mut display, &mut memory, &address_register, &mut registers);
+        OpCodesProcessor::new().draw_vx_vy_n(
+            0,
+            1,
+            3,
+            &mut display,
+            &mut memory,
+            &address_register,
+            &mut registers,
+        );
 
         assert!(display.draw_sprite_called);
         assert_eq!(0x1, registers.get_register_at(0xf));
@@ -1090,37 +1208,52 @@ mod test_opcodes_processor {
 
     #[test]
     fn test_keyop_vx_equal_key() {
-        let mut keyboard = MockedKeyboard{};
+        let mut keyboard = MockedKeyboard {};
         let mut registers = Registers::new();
         let mut program_counter = 0;
 
-        OpCodesProcessor::new().keyop_vx_equal_key(&mut keyboard, &mut registers, 0x1, &mut program_counter);
+        OpCodesProcessor::new().keyop_vx_equal_key(
+            &mut keyboard,
+            &mut registers,
+            0x1,
+            &mut program_counter,
+        );
 
         assert_eq!(0x5, registers.get_register_at(0x1));
     }
 
     #[test]
     fn test_keyop_if_key_equal_vx() {
-        let mut keyboard = MockedKeyboard{};
+        let mut keyboard = MockedKeyboard {};
         let mut registers = Registers::new();
         let mut program_counter = 0x0;
 
         registers.set_register_at(0x1, 0x4);
 
-        OpCodesProcessor::new().keyop_if_key_equal_vx(&mut keyboard, &mut registers, &mut program_counter, 0x1);
+        OpCodesProcessor::new().keyop_if_key_equal_vx(
+            &mut keyboard,
+            &mut registers,
+            &mut program_counter,
+            0x1,
+        );
 
         assert_eq!(0x2, program_counter);
     }
 
     #[test]
     fn test_keyop_if_key_not_equal_vx() {
-        let mut keyboard = MockedKeyboard{};
+        let mut keyboard = MockedKeyboard {};
         let mut registers = Registers::new();
         let mut program_counter = 0x0;
 
         registers.set_register_at(0x1, 0x5);
 
-        OpCodesProcessor::new().keyop_if_key_equal_vx(&mut keyboard, &mut registers, &mut program_counter, 0x1);
+        OpCodesProcessor::new().keyop_if_key_equal_vx(
+            &mut keyboard,
+            &mut registers,
+            &mut program_counter,
+            0x1,
+        );
 
         assert_eq!(0x0, program_counter);
     }

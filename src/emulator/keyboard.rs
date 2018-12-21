@@ -1,10 +1,10 @@
-use termion::{async_stdin, AsyncReader};
-use std::io::Read;
 use std::cell::RefCell;
+use std::io::Read;
+use termion::{async_stdin, AsyncReader};
 
 pub struct Keyboard {
     async_reader: RefCell<AsyncReader>,
-    bytes_buffer: RefCell<Vec<u8>>
+    bytes_buffer: RefCell<Vec<u8>>,
 }
 
 #[derive(Debug, PartialEq, Copy, Clone)]
@@ -32,12 +32,15 @@ impl Keyboard {
     pub fn new() -> Self {
         Keyboard {
             async_reader: RefCell::new(async_stdin()),
-            bytes_buffer: RefCell::new(Vec::new())
+            bytes_buffer: RefCell::new(Vec::new()),
         }
     }
 
     fn read_key(&self) -> Option<Key> {
-        self.async_reader.borrow_mut().read_to_end(&mut self.bytes_buffer.borrow_mut()).unwrap();
+        self.async_reader
+            .borrow_mut()
+            .read_to_end(&mut self.bytes_buffer.borrow_mut())
+            .unwrap();
         let mut buffer = self.bytes_buffer.borrow_mut();
         let bytes = buffer.drain(..).collect::<Vec<u8>>();
 

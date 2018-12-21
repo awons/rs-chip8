@@ -2,10 +2,10 @@ extern crate termion;
 
 mod emulator;
 
+use emulator::Emulator;
 use std::env;
 use std::fs::File;
 use std::io::Read;
-use emulator::Emulator;
 
 fn main() {
     let args: Vec<String> = env::args().collect();

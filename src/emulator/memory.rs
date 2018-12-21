@@ -13,14 +13,18 @@ impl Memory {
         }
     }
 
-    pub fn read(&self, address: u16) -> u8 { self.memory[address as usize] }
+    pub fn read(&self, address: u16) -> u8 {
+        self.memory[address as usize]
+    }
 
-    pub fn write(&mut self, address: u16, data: u8) { self.memory[address as usize] = data; }
+    pub fn write(&mut self, address: u16, data: u8) {
+        self.memory[address as usize] = data;
+    }
 }
 
 pub struct Stack {
     memory: [u16; STACK_SIZE],
-    stack_pointer: usize
+    stack_pointer: usize,
 }
 
 impl Stack {
@@ -46,13 +50,13 @@ impl Stack {
 }
 
 pub struct Registers {
-    registers: [u8; REGISTERS_COUNT]
+    registers: [u8; REGISTERS_COUNT],
 }
 
 impl Registers {
     pub fn new() -> Self {
         Registers {
-            registers: [0; REGISTERS_COUNT]
+            registers: [0; REGISTERS_COUNT],
         }
     }
 
@@ -70,8 +74,7 @@ mod test_memory {
     use super::*;
 
     #[test]
-    fn test_can_write_to_and_read_from_memory_at_given_address()
-    {
+    fn test_can_write_to_and_read_from_memory_at_given_address() {
         let mut memory = Memory::new();
         memory.write(0x100, 16);
 
@@ -80,23 +83,20 @@ mod test_memory {
 
     #[test]
     #[should_panic]
-    fn test_will_panic_when_trying_to_read_outside_of_available_memory()
-    {
+    fn test_will_panic_when_trying_to_read_outside_of_available_memory() {
         let memory = Memory::new();
         memory.read(0x1000);
     }
 
     #[test]
     #[should_panic]
-    fn test_will_panic_when_trying_to_write_outside_of_available_memory()
-    {
+    fn test_will_panic_when_trying_to_write_outside_of_available_memory() {
         let mut memory = Memory::new();
         memory.write(0x1000, 1);
     }
 
     #[test]
-    fn test_can_move_up_and_down_the_stack()
-    {
+    fn test_can_move_up_and_down_the_stack() {
         let mut stack = Stack::new();
 
         stack.push(0x100);
@@ -109,8 +109,7 @@ mod test_memory {
     }
 
     #[test]
-    fn test_can_write_to_and_read_from_registers()
-    {
+    fn test_can_write_to_and_read_from_registers() {
         let mut registers = Registers::new();
 
         assert_eq!(0, registers.get_register_at(0xe));

@@ -1,16 +1,16 @@
-mod memory;
 mod chipset;
-mod opcode_processor;
 mod display;
 mod keyboard;
+mod memory;
+mod opcode_processor;
 
-use self::chipset::{Chipset, Chip8Chipset, PROGRAM_COUNTER_BOUNDARY};
-use self::memory::{Memory, Stack, Registers};
-use self::opcode_processor::OpCodesProcessor;
+use self::chipset::{Chip8Chipset, Chipset, PROGRAM_COUNTER_BOUNDARY};
 use self::display::Display;
 use self::keyboard::Keyboard;
-use std::time::Duration;
+use self::memory::{Memory, Registers, Stack};
+use self::opcode_processor::OpCodesProcessor;
 use std::thread::sleep;
+use std::time::Duration;
 
 pub struct Emulator {
     memory: Memory,
@@ -25,7 +25,7 @@ impl Emulator {
             memory: Memory::new(),
             stack: Stack::new(),
             fontset: Fontset::new(),
-            registers: Registers::new()
+            registers: Registers::new(),
         }
     }
 
@@ -34,16 +34,14 @@ impl Emulator {
         self.load_program(data);
 
         InitializedEmulator {
-            chipset: Box::new(
-                Chip8Chipset::new(
-                    self.memory,
-                    self.stack,
-                    self.registers,
-                    OpCodesProcessor::new(),
-                    Display::new(),
-                    Keyboard::new()
-                )
-            )
+            chipset: Box::new(Chip8Chipset::new(
+                self.memory,
+                self.stack,
+                self.registers,
+                OpCodesProcessor::new(),
+                Display::new(),
+                Keyboard::new(),
+            )),
         }
     }
 
@@ -55,8 +53,7 @@ impl Emulator {
         }
     }
 
-    fn load_program(&mut self, data: &[u8])
-    {
+    fn load_program(&mut self, data: &[u8]) {
         let mut address = PROGRAM_COUNTER_BOUNDARY;
 
         for byte in data {
@@ -101,8 +98,8 @@ impl Fontset {
                 0xf0, 0x80, 0x80, 0x80, 0xf0, // C
                 0xe0, 0x90, 0x90, 0x90, 0xe0, // D
                 0xf0, 0x80, 0xf0, 0x80, 0xf0, // E
-                0xf0, 0x80, 0xf0, 0x80, 0x80  // F
-            ]
+                0xf0, 0x80, 0xf0, 0x80, 0x80, // F
+            ],
         }
     }
 
