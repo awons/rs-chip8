@@ -2,7 +2,7 @@ extern crate termion;
 
 mod emulator;
 
-use emulator::Emulator;
+use crate::emulator::Emulator;
 use std::env;
 use std::fs::File;
 use std::io::Read;

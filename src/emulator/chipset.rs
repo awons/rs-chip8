@@ -1,7 +1,7 @@
-use emulator::display::TDisplay;
-use emulator::keyboard::TKeyboard;
-use emulator::memory::{Memory, Registers, Stack, MEMORY_SIZE};
-use emulator::opcode_processor::{OpCode, TOpCodesProcessor};
+use crate::emulator::display::TDisplay;
+use crate::emulator::keyboard::TKeyboard;
+use crate::emulator::memory::{Memory, Registers, Stack, MEMORY_SIZE};
+use crate::emulator::opcode_processor::{OpCode, TOpCodesProcessor};
 
 pub const PROGRAM_COUNTER_BOUNDARY: u16 = 0x200;
 
@@ -358,9 +358,9 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
 #[cfg(test)]
 mod test_chipset {
     use super::*;
-    use emulator::display::Display;
-    use emulator::keyboard::Keyboard;
-    use emulator::memory::{Memory, Registers, Stack};
+    use crate::emulator::display::Display;
+    use crate::emulator::keyboard::Keyboard;
+    use crate::emulator::memory::{Memory, Registers, Stack};
     use std::cell::Cell;
 
     impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chip8Chipset<O, D, K> {

@@ -1,8 +1,8 @@
 extern crate rand;
 
-use emulator::display::TDisplay;
-use emulator::keyboard::{Key, TKeyboard};
-use emulator::memory::{Memory, Registers, Stack};
+use crate::emulator::display::TDisplay;
+use crate::emulator::keyboard::{Key, TKeyboard};
+use crate::emulator::memory::{Memory, Registers, Stack};
 
 use std::fmt;
 use std::result;
@@ -64,7 +64,7 @@ impl fmt::LowerHex for OpCode {
 }
 
 pub trait TOpCodesProcessor {
-    fn clear_screen(&self, &mut TDisplay);
+    fn clear_screen(&self, _: &mut TDisplay);
     fn return_from_subroutine(&self, stack: &mut Stack, program_counter: &mut u16);
     fn jump_to_address(&self, program_counter: &mut u16, address: u16);
     fn call_subroutine(&self, program_counter: &mut u16, address: u16, stack: &mut Stack);
@@ -513,9 +513,9 @@ mod test_opcode {
 #[cfg(test)]
 mod test_opcodes_processor {
     use super::*;
-    use emulator::display::TDisplay;
-    use emulator::keyboard::{Key, TKeyboard};
-    use emulator::memory::{Memory, Registers, Stack};
+    use crate::emulator::display::TDisplay;
+    use crate::emulator::keyboard::{Key, TKeyboard};
+    use crate::emulator::memory::{Memory, Registers, Stack};
 
     struct MockedDisplay {
         draw_sprite_called: bool,

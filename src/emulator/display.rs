@@ -1,4 +1,4 @@
-use emulator::memory::Memory;
+use crate::emulator::memory::Memory;
 use std::cell::RefCell;
 use std::io::{stdout, Stdout, Write};
 use std::ops;
@@ -171,7 +171,7 @@ impl TDisplay for Display {
 #[cfg(test)]
 mod test_display {
     use super::{Display, TDisplay};
-    use emulator::memory::Memory;
+    use crate::emulator::memory::Memory;
 
     impl Display {
         fn get_pixel(&self, y: u8, x: u8) -> u8 {
