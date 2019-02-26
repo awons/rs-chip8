@@ -64,7 +64,7 @@ impl Emulator {
 }
 
 pub struct InitializedEmulator {
-    chipset: Box<Chipset>,
+    chipset: Box<dyn Chipset>,
 }
 
 impl InitializedEmulator {

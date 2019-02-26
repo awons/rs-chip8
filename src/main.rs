@@ -1,4 +1,4 @@
-extern crate termion;
+
 
 mod emulator;
 

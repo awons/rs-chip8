@@ -487,7 +487,7 @@ mod test_chipset {
         }
     }
     impl TOpCodesProcessor for MockedOpCodesProcessor {
-        fn clear_screen(&self, _registers: &mut TDisplay) {
+        fn clear_screen(&self, _registers: &mut dyn TDisplay) {
             self.set_matched_method("clear_screen");
         }
         fn return_from_subroutine(&self, _stack: &mut Stack, _program_counter: &mut u16) {
@@ -587,7 +587,7 @@ mod test_chipset {
             _x: u8,
             _y: u8,
             _n: u8,
-            _display: &mut TDisplay,
+            _display: &mut dyn TDisplay,
             _memory: &Memory,
             _address_register: &u16,
             _registers: &mut Registers,
@@ -639,7 +639,7 @@ mod test_chipset {
         }
         fn keyop_if_key_equal_vx(
             &self,
-            _keyboard: &mut TKeyboard,
+            _keyboard: &mut dyn TKeyboard,
             _registers: &Registers,
             _program_counter: &mut u16,
             _x: u8,
@@ -648,7 +648,7 @@ mod test_chipset {
         }
         fn keyop_if_key_not_equal_vx(
             &self,
-            _keyboard: &mut TKeyboard,
+            _keyboard: &mut dyn TKeyboard,
             _registers: &Registers,
             _program_counter: &mut u16,
             _x: u8,
@@ -657,7 +657,7 @@ mod test_chipset {
         }
         fn keyop_vx_equal_key(
             &self,
-            _keyboard: &mut TKeyboard,
+            _keyboard: &mut dyn TKeyboard,
             _registers: &mut Registers,
             _x: u8,
             _program_counter: &mut u16,

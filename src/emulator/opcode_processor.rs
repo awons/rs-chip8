@@ -1,4 +1,4 @@
-extern crate rand;
+use rand;
 
 use crate::emulator::display::TDisplay;
 use crate::emulator::keyboard::{Key, TKeyboard};
@@ -55,7 +55,7 @@ impl OpCode {
 }
 
 impl fmt::LowerHex for OpCode {
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> result::Result<(), fmt::Error> {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> result::Result<(), fmt::Error> {
         let string = format!("{:#06x}", self.opcode);
         formatter.write_str(&string)?;
 
@@ -64,7 +64,7 @@ impl fmt::LowerHex for OpCode {
 }
 
 pub trait TOpCodesProcessor {
-    fn clear_screen(&self, _: &mut TDisplay);
+    fn clear_screen(&self, _: &mut dyn TDisplay);
     fn return_from_subroutine(&self, stack: &mut Stack, program_counter: &mut u16);
     fn jump_to_address(&self, program_counter: &mut u16, address: u16);
     fn call_subroutine(&self, program_counter: &mut u16, address: u16, stack: &mut Stack);
@@ -91,7 +91,7 @@ pub trait TOpCodesProcessor {
         x: u8,
         y: u8,
         n: u8,
-        display: &mut TDisplay,
+        display: &mut dyn TDisplay,
         memory: &Memory,
         address_register: &u16,
         registers: &mut Registers,
@@ -115,21 +115,21 @@ pub trait TOpCodesProcessor {
     );
     fn keyop_if_key_equal_vx(
         &self,
-        keyboard: &mut TKeyboard,
+        keyboard: &mut dyn TKeyboard,
         registers: &Registers,
         program_counter: &mut u16,
         x: u8,
     );
     fn keyop_if_key_not_equal_vx(
         &self,
-        keyboard: &mut TKeyboard,
+        keyboard: &mut dyn TKeyboard,
         registers: &Registers,
         program_counter: &mut u16,
         x: u8,
     );
     fn keyop_vx_equal_key(
         &self,
-        keyboard: &mut TKeyboard,
+        keyboard: &mut dyn TKeyboard,
         registers: &mut Registers,
         x: u8,
         program_counter: &mut u16,
@@ -148,7 +148,7 @@ impl OpCodesProcessor {
 }
 
 impl TOpCodesProcessor for OpCodesProcessor {
-    fn clear_screen(&self, display: &mut TDisplay) {
+    fn clear_screen(&self, display: &mut dyn TDisplay) {
         display.clear();
     }
 
@@ -327,7 +327,7 @@ impl TOpCodesProcessor for OpCodesProcessor {
         vx: u8,
         vy: u8,
         n: u8,
-        display: &mut TDisplay,
+        display: &mut dyn TDisplay,
         memory: &Memory,
         address_register: &u16,
         registers: &mut Registers,
@@ -401,7 +401,7 @@ impl TOpCodesProcessor for OpCodesProcessor {
 
     fn keyop_if_key_equal_vx(
         &self,
-        keyboard: &mut TKeyboard,
+        keyboard: &mut dyn TKeyboard,
         registers: &Registers,
         program_counter: &mut u16,
         x: u8,
@@ -420,7 +420,7 @@ impl TOpCodesProcessor for OpCodesProcessor {
 
     fn keyop_if_key_not_equal_vx(
         &self,
-        keyboard: &mut TKeyboard,
+        keyboard: &mut dyn TKeyboard,
         registers: &Registers,
         program_counter: &mut u16,
         x: u8,
@@ -439,7 +439,7 @@ impl TOpCodesProcessor for OpCodesProcessor {
 
     fn keyop_vx_equal_key(
         &self,
-        keyboard: &mut TKeyboard,
+        keyboard: &mut dyn TKeyboard,
         registers: &mut Registers,
         x: u8,
         program_counter: &mut u16,
