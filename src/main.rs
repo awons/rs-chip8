@@ -1,5 +1,3 @@
-
-
 mod emulator;
 
 use crate::emulator::Emulator;
