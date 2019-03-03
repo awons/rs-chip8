@@ -201,7 +201,7 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                     }
                     (0x9, _, _, 0x0) => {
                         self.opcode_processor.cond_vx_not_equal_vy(
-                            &mut self.registers,
+                            &self.registers,
                             &mut self.program_counter,
                             opcode.get_x(),
                             opcode.get_y(),
@@ -235,7 +235,7 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                             opcode.get_n(),
                             &mut self.display,
                             &self.memory,
-                            &self.address_register,
+                            self.address_register,
                             &mut self.registers,
                         );
                         self.program_counter += 2;
@@ -260,7 +260,7 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                     }
                     (0xf, _, 0x0, 0x7) => {
                         self.opcode_processor.timer_vx_equal_get_delay(
-                            &self.delay_timer,
+                            self.delay_timer,
                             &mut self.registers,
                             opcode.get_x(),
                         );
@@ -306,7 +306,7 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                     (0xf, _, 0x3, 0x3) => {
                         self.opcode_processor.mem_bcd(
                             &self.registers,
-                            &self.address_register,
+                            self.address_register,
                             &mut self.memory,
                             opcode.get_x(),
                         );
@@ -348,8 +348,8 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
             return None;
         }
 
-        let data = ((self.memory.read(self.program_counter) as u16) << 8)
-            + (self.memory.read(self.program_counter + 1) as u16);
+        let data = (u16::from(self.memory.read(self.program_counter)) << 8)
+            + u16::from(self.memory.read(self.program_counter + 1));
 
         Some(OpCode::from_data(data))
     }
@@ -589,7 +589,7 @@ mod test_chipset {
             _n: u8,
             _display: &mut dyn TDisplay,
             _memory: &Memory,
-            _address_register: &u16,
+            _address_register: u16,
             _registers: &mut Registers,
         ) {
             self.set_matched_method("draw_vx_vy_n");
@@ -613,7 +613,7 @@ mod test_chipset {
         fn mem_bcd(
             &self,
             _registers: &Registers,
-            _address_register: &u16,
+            _address_register: u16,
             _memory: &mut Memory,
             _x: u8,
         ) {
@@ -664,7 +664,7 @@ mod test_chipset {
         ) {
             self.set_matched_method("keyop_vx_equal_key");
         }
-        fn timer_vx_equal_get_delay(&self, _delay_timer: &u8, _registers: &mut Registers, _x: u8) {
+        fn timer_vx_equal_get_delay(&self, _delay_timer: u8, _registers: &mut Registers, _x: u8) {
             self.set_matched_method("timer_vx_equal_get_delay");
         }
         fn timer_delay_timer_equal_vx(

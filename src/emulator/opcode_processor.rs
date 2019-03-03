@@ -93,12 +93,12 @@ pub trait TOpCodesProcessor {
         n: u8,
         display: &mut dyn TDisplay,
         memory: &Memory,
-        address_register: &u16,
+        address_register: u16,
         registers: &mut Registers,
     );
     fn mem_i_equal_i_plus_vx(&self, registers: &mut Registers, address_register: &mut u16, x: u8);
     fn mem_i_equal_sprite_addr_vx(&self, registers: &Registers, address_register: &mut u16, x: u8);
-    fn mem_bcd(&self, registers: &Registers, address_register: &u16, memory: &mut Memory, x: u8);
+    fn mem_bcd(&self, registers: &Registers, address_register: u16, memory: &mut Memory, x: u8);
     fn mem_reg_dump(
         &self,
         registers: &Registers,
@@ -134,7 +134,7 @@ pub trait TOpCodesProcessor {
         x: u8,
         program_counter: &mut u16,
     );
-    fn timer_vx_equal_get_delay(&self, delay_timer: &u8, registers: &mut Registers, x: u8);
+    fn timer_vx_equal_get_delay(&self, delay_timer: u8, registers: &mut Registers, x: u8);
     fn timer_delay_timer_equal_vx(&self, delay_timer: &mut u8, registers: &Registers, x: u8);
     fn sound_sound_timer_equal_vx(&self);
 }
@@ -236,7 +236,7 @@ impl TOpCodesProcessor for OpCodesProcessor {
 
         registers.set_register_at(x as usize, vx.wrapping_add(vy));
 
-        if vx as u16 + vy as u16 > 0xff {
+        if u16::from(vx) + u16::from(vy) > 0xff {
             registers.set_register_at(0xf, 0x1);
         } else {
             registers.set_register_at(0xf, 0x0);
@@ -260,7 +260,7 @@ impl TOpCodesProcessor for OpCodesProcessor {
         let vy = registers.get_register_at(y as usize);
         let result = vy >> 1;
 
-        if vy & 0b00000001 == 0x1 {
+        if vy & 0b0000_0001 == 0x1 {
             registers.set_register_at(0xf, 0x1);
         } else {
             registers.set_register_at(0xf, 0x0);
@@ -287,7 +287,7 @@ impl TOpCodesProcessor for OpCodesProcessor {
         let vy = registers.get_register_at(y as usize);
         let result = vy << 1;
 
-        if vy & 0b10000000 == 0x80 {
+        if vy & 0b1000_0000 == 0x80 {
             registers.set_register_at(0xf, 0x1);
         } else {
             registers.set_register_at(0xf, 0x0);
@@ -315,7 +315,7 @@ impl TOpCodesProcessor for OpCodesProcessor {
         nnn: u16,
         registers: &Registers,
     ) {
-        *program_counter = nnn + registers.get_register_at(0) as u16;
+        *program_counter = nnn + u16::from(registers.get_register_at(0));
     }
 
     fn rand_vx_equal_rand_and_nn(&self, registers: &mut Registers, x: u8, nn: u8) {
@@ -329,7 +329,7 @@ impl TOpCodesProcessor for OpCodesProcessor {
         n: u8,
         display: &mut dyn TDisplay,
         memory: &Memory,
-        address_register: &u16,
+        address_register: u16,
         registers: &mut Registers,
     ) {
         let x = registers.get_register_at(vx as usize);
@@ -341,7 +341,7 @@ impl TOpCodesProcessor for OpCodesProcessor {
     fn mem_i_equal_i_plus_vx(&self, registers: &mut Registers, address_register: &mut u16, x: u8) {
         let vx = registers.get_register_at(x as usize);
 
-        let result: u32 = *address_register as u32 + vx as u32;
+        let result: u32 = u32::from(*address_register) + u32::from(vx);
         if result > 0xffff {
             registers.set_register_at(0xf, 0x1);
         } else {
@@ -358,19 +358,19 @@ impl TOpCodesProcessor for OpCodesProcessor {
             panic!(format!("Font cannot be greater than 0xf but {:x} given", x));
         }
 
-        *address_register = (0x5 * x) as u16;
+        *address_register = u16::from(0x5 * x);
     }
 
-    fn mem_bcd(&self, registers: &Registers, address_register: &u16, memory: &mut Memory, x: u8) {
+    fn mem_bcd(&self, registers: &Registers, address_register: u16, memory: &mut Memory, x: u8) {
         let x = registers.get_register_at(x as usize);
 
-        let hundreds: u8 = ((x as f32) / 100.0).floor() as u8;
-        let tens: u8 = ((x - hundreds * 100) as f32 / 10.0).floor() as u8;
+        let hundreds: u8 = (f32::from(x) / 100.0).floor() as u8;
+        let tens: u8 = (f32::from(x - hundreds * 100) / 10.0).floor() as u8;
         let ones: u8 = x - (hundreds * 100) - (tens * 10);
 
-        memory.write(*address_register, hundreds);
-        memory.write(*address_register + 0x1, tens);
-        memory.write(*address_register + 0x2, ones);
+        memory.write(address_register, hundreds);
+        memory.write(address_register + 0x1, tens);
+        memory.write(address_register + 0x2, ones);
     }
 
     fn mem_reg_dump(
@@ -380,7 +380,7 @@ impl TOpCodesProcessor for OpCodesProcessor {
         address_register: &mut u16,
         x: u8,
     ) {
-        for z in 0x0..x + 0x1 {
+        for z in 0x0..=x {
             memory.write(*address_register, registers.get_register_at(z as usize));
             *address_register += 1;
         }
@@ -393,7 +393,7 @@ impl TOpCodesProcessor for OpCodesProcessor {
         address_register: &mut u16,
         x: u8,
     ) {
-        for z in 0x0..x + 0x1 {
+        for z in 0x0..=x {
             registers.set_register_at(z as usize, memory.read(*address_register));
             *address_register += 1;
         }
@@ -450,8 +450,8 @@ impl TOpCodesProcessor for OpCodesProcessor {
         }
     }
 
-    fn timer_vx_equal_get_delay(&self, delay_timer: &u8, registers: &mut Registers, x: u8) {
-        registers.set_register_at(x as usize, *delay_timer);
+    fn timer_vx_equal_get_delay(&self, delay_timer: u8, registers: &mut Registers, x: u8) {
+        registers.set_register_at(x as usize, delay_timer);
     }
 
     fn timer_delay_timer_equal_vx(&self, delay_timer: &mut u8, registers: &Registers, x: u8) {
@@ -537,7 +537,7 @@ mod test_opcodes_processor {
             x: u8,
             _y: u8,
             _rows: u8,
-            _address_register: &u16,
+            _address_register: u16,
             _memory: &Memory,
         ) -> bool {
             self.draw_sprite_called = true;
@@ -1101,7 +1101,7 @@ mod test_opcodes_processor {
         let mut registers = Registers::new();
 
         registers.set_register_at(x as usize, 253);
-        OpCodesProcessor::new().mem_bcd(&registers, &address_register, &mut memory, x);
+        OpCodesProcessor::new().mem_bcd(&registers, address_register, &mut memory, x);
 
         assert_eq!(2, memory.read(address_register));
         assert_eq!(5, memory.read(address_register + 1));
@@ -1109,7 +1109,7 @@ mod test_opcodes_processor {
 
         let mut memory = Memory::new();
         registers.set_register_at(x as usize, 49);
-        OpCodesProcessor::new().mem_bcd(&registers, &address_register, &mut memory, x);
+        OpCodesProcessor::new().mem_bcd(&registers, address_register, &mut memory, x);
 
         assert_eq!(0, memory.read(address_register));
         assert_eq!(4, memory.read(address_register + 1));
@@ -1117,7 +1117,7 @@ mod test_opcodes_processor {
 
         let mut memory = Memory::new();
         registers.set_register_at(x as usize, 7);
-        OpCodesProcessor::new().mem_bcd(&registers, &address_register, &mut memory, x);
+        OpCodesProcessor::new().mem_bcd(&registers, address_register, &mut memory, x);
 
         assert_eq!(0, memory.read(address_register));
         assert_eq!(0, memory.read(address_register + 1));
@@ -1175,7 +1175,7 @@ mod test_opcodes_processor {
             3,
             &mut display,
             &mut memory,
-            &address_register,
+            address_register,
             &mut registers,
         );
 
@@ -1198,7 +1198,7 @@ mod test_opcodes_processor {
             3,
             &mut display,
             &mut memory,
-            &address_register,
+            address_register,
             &mut registers,
         );
 
@@ -1263,7 +1263,7 @@ mod test_opcodes_processor {
         let delay_timer = 0x20;
         let mut registers = Registers::new();
 
-        OpCodesProcessor::new().timer_vx_equal_get_delay(&delay_timer, &mut registers, 0xa);
+        OpCodesProcessor::new().timer_vx_equal_get_delay(delay_timer, &mut registers, 0xa);
 
         assert_eq!(0x20, registers.get_register_at(0xa));
     }

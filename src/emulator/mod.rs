@@ -46,10 +46,8 @@ impl Emulator {
     }
 
     fn load_fonts(&mut self) {
-        let mut address: u16 = 0;
-        for font in self.fontset.get_values() {
-            self.memory.write(address, *font);
-            address += 1;
+        for (address, font) in self.fontset.get_values().iter().enumerate() {
+            self.memory.write(address as u16, *font);
         }
     }
 

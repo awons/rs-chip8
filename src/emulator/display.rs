@@ -63,17 +63,12 @@ impl Display {
     }
 
     fn draw_on_canvas(&self, x: u8, y: u8, pixel: u8) {
-        let character;
-        if pixel == 0 {
-            character = " ";
-        } else {
-            character = "*";
-        }
+        let character = if pixel == 0 { " " } else { "*" };
 
         write!(
             self.raw_terminal.borrow_mut(),
             "{}{}",
-            termion::cursor::Goto((x + 1) as u16, (y + 1) as u16),
+            termion::cursor::Goto(u16::from(x + 1), u16::from(y + 1)),
             character
         )
         .unwrap();
@@ -95,7 +90,7 @@ pub trait TDisplay {
         start_x: u8,
         start_y: u8,
         rows: u8,
-        address_register: &u16,
+        address_register: u16,
         memory: &Memory,
     ) -> bool;
     fn clear(&mut self);
@@ -114,20 +109,19 @@ impl TDisplay for Display {
         start_x: u8,
         start_y: u8,
         rows: u8,
-        address_register: &u16,
+        address_register: u16,
         memory: &Memory,
     ) -> bool {
         let mut is_flipped = false;
 
-        let mut display_y;
-        if start_y > DISPLAY_MAX_Y as u8 {
-            display_y = start_y % (DISPLAY_HEIGHT as u8);
+        let mut display_y = if start_y > DISPLAY_MAX_Y as u8 {
+            start_y % (DISPLAY_HEIGHT as u8)
         } else {
-            display_y = start_y;
-        }
+            start_y
+        };
 
         for row in 0..rows {
-            let sprite_new_row = memory.read(*address_register + row as u16);
+            let sprite_new_row = memory.read(address_register + u16::from(row));
             let mask: u8 = 0b1000_0000;
 
             if display_y > DISPLAY_MAX_Y {
@@ -145,11 +139,11 @@ impl TDisplay for Display {
                     continue;
                 }
 
-                let current_mask = mask.rotate_right(sprite_position_x as u32);
+                let current_mask = mask.rotate_right(u32::from(sprite_position_x));
 
                 let old_pixel = self.memory[display_y as usize][display_x as usize];
                 let new_pixel =
-                    (sprite_new_row & current_mask).rotate_left(sprite_position_x as u32 + 1);
+                    (sprite_new_row & current_mask).rotate_left(u32::from(sprite_position_x) + 1);
                 let xor_pixel = old_pixel ^ new_pixel;
                 self.memory[display_y as usize][display_x as usize] = xor_pixel;
                 if old_pixel & new_pixel == 1 {
@@ -188,7 +182,7 @@ mod test_display {
         }
 
         let mut display = Display::new();
-        let is_flipped = display.draw_sprite(0, 0, 3, &address_register, &memory);
+        let is_flipped = display.draw_sprite(0, 0, 3, address_register, &memory);
         assert!(!is_flipped);
     }
 
@@ -201,8 +195,8 @@ mod test_display {
         }
 
         let mut display = Display::new();
-        display.draw_sprite(0, 0, 3, &address_register, &memory);
-        let is_flipped = display.draw_sprite(0, 0, 3, &address_register, &memory);
+        display.draw_sprite(0, 0, 3, address_register, &memory);
+        let is_flipped = display.draw_sprite(0, 0, 3, address_register, &memory);
 
         assert!(is_flipped);
     }
@@ -216,7 +210,7 @@ mod test_display {
         }
 
         let mut display = Display::new();
-        display.draw_sprite(0, 0, 3, &address_register, &memory);
+        display.draw_sprite(0, 0, 3, address_register, &memory);
         display.clear();
 
         for y in 0..2 {
