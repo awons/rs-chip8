@@ -37,10 +37,8 @@ impl Stack {
 
     pub fn pop(&mut self) -> u16 {
         self.stack_pointer -= 1;
-        let return_address = self.memory[self.stack_pointer];
-        self.memory[self.stack_pointer] = 0;
 
-        return_address
+        self.memory[self.stack_pointer]
     }
 
     pub fn push(&mut self, address: u16) {
