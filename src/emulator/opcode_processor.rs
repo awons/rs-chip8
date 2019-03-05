@@ -916,13 +916,13 @@ mod test_opcodes_processor {
         let y: u8 = 0x2;
 
         let mut registers = Registers::new();
-        registers.set_register_at(x as usize, u8::max_value());
-        registers.set_register_at(y as usize, 100);
+        registers.set_register_at(x as usize, 0x1);
+        registers.set_register_at(y as usize, 0x0);
         registers.set_register_at(0xf, 0x1);
 
         OpCodesProcessor::new().math_vx_equal_vy_minus_vx(&mut registers, x, y);
 
-        assert_eq!(101, registers.get_register_at(x as usize));
+        assert_eq!(0xff, registers.get_register_at(x as usize));
         assert_eq!(0x0, registers.get_register_at(0xf));
     }
 
