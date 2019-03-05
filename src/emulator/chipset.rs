@@ -176,11 +176,8 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                         self.program_counter += 2;
                     }
                     (0x8, _, _, 0x6) => {
-                        self.opcode_processor.bitop_vx_equal_vy_shr(
-                            &mut self.registers,
-                            opcode.get_x(),
-                            opcode.get_y(),
-                        );
+                        self.opcode_processor
+                            .bitop_vx_equal_vx_shr(&mut self.registers, opcode.get_x());
                         self.program_counter += 2;
                     }
                     (0x8, _, _, 0x7) => {
@@ -192,11 +189,8 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                         self.program_counter += 2;
                     }
                     (0x8, _, _, 0xe) => {
-                        self.opcode_processor.bitop_vx_equal_vy_shl(
-                            &mut self.registers,
-                            opcode.get_x(),
-                            opcode.get_y(),
-                        );
+                        self.opcode_processor
+                            .bitop_vx_equal_vx_shl(&mut self.registers, opcode.get_x());
                         self.program_counter += 2;
                     }
                     (0x9, _, _, 0x0) => {
@@ -407,9 +401,9 @@ mod test_chipset {
         opcodes.push(("bitop_vx_equal_vx_xor_vy", 0x8213));
         opcodes.push(("math_vx_equal_vx_plus_vy", 0x8214));
         opcodes.push(("math_vx_equal_vx_minus_vy", 0x8215));
-        opcodes.push(("bitop_vx_equal_vy_shr", 0x8216));
+        opcodes.push(("bitop_vx_equal_vx_shr", 0x8216));
         opcodes.push(("math_vx_equal_vy_minus_vx", 0x8217));
-        opcodes.push(("bitop_vx_equal_vy_shl", 0x821e));
+        opcodes.push(("bitop_vx_equal_vx_shl", 0x821e));
         opcodes.push(("cond_vx_not_equal_vy", 0x9120));
         opcodes.push(("mem_i_equal_nnn", 0xa123));
         opcodes.push(("flow_pc_equal_v0_plus_nnn", 0xb123));
@@ -550,14 +544,14 @@ mod test_chipset {
         fn math_vx_equal_vx_minus_vy(&self, _registers: &mut Registers, _x: u8, _y: u8) {
             self.set_matched_method("math_vx_equal_vx_minus_vy");
         }
-        fn bitop_vx_equal_vy_shr(&self, _registers: &mut Registers, _x: u8, _y: u8) {
-            self.set_matched_method("bitop_vx_equal_vy_shr");
+        fn bitop_vx_equal_vx_shr(&self, _registers: &mut Registers, _x: u8) {
+            self.set_matched_method("bitop_vx_equal_vx_shr");
         }
         fn math_vx_equal_vy_minus_vx(&self, _registers: &mut Registers, _x: u8, _y: u8) {
             self.set_matched_method("math_vx_equal_vy_minus_vx");
         }
-        fn bitop_vx_equal_vy_shl(&self, _registers: &mut Registers, _x: u8, _y: u8) {
-            self.set_matched_method("bitop_vx_equal_vy_shl");
+        fn bitop_vx_equal_vx_shl(&self, _registers: &mut Registers, _x: u8) {
+            self.set_matched_method("bitop_vx_equal_vx_shl");
         }
         fn cond_vx_not_equal_vy(
             &self,

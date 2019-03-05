@@ -79,9 +79,9 @@ pub trait TOpCodesProcessor {
     fn bitop_vx_equal_vx_xor_vy(&self, registers: &mut Registers, x: u8, y: u8);
     fn math_vx_equal_vx_plus_vy(&self, registers: &mut Registers, x: u8, y: u8);
     fn math_vx_equal_vx_minus_vy(&self, registers: &mut Registers, x: u8, y: u8);
-    fn bitop_vx_equal_vy_shr(&self, registers: &mut Registers, x: u8, y: u8);
+    fn bitop_vx_equal_vx_shr(&self, registers: &mut Registers, x: u8);
     fn math_vx_equal_vy_minus_vx(&self, registers: &mut Registers, x: u8, y: u8);
-    fn bitop_vx_equal_vy_shl(&self, registers: &mut Registers, x: u8, y: u8);
+    fn bitop_vx_equal_vx_shl(&self, registers: &mut Registers, x: u8);
     fn cond_vx_not_equal_vy(&self, registers: &Registers, program_counter: &mut u16, x: u8, y: u8);
     fn mem_i_equal_nnn(&self, address_register: &mut u16, nnn: u16);
     fn flow_pc_equal_v0_plus_nnn(&self, program_counter: &mut u16, nnn: u16, registers: &Registers);
@@ -256,18 +256,16 @@ impl TOpCodesProcessor for OpCodesProcessor {
         }
     }
 
-    fn bitop_vx_equal_vy_shr(&self, registers: &mut Registers, x: u8, y: u8) {
-        let vy = registers.get_register_at(y as usize);
-        let result = vy >> 1;
+    fn bitop_vx_equal_vx_shr(&self, registers: &mut Registers, x: u8) {
+        let vx = registers.get_register_at(x as usize);
 
-        if vy & 0b0000_0001 == 0x1 {
+        if vx & 0b0000_0001 == 0b0000_0001 {
             registers.set_register_at(0xf, 0x1);
         } else {
             registers.set_register_at(0xf, 0x0);
         }
 
-        registers.set_register_at(x as usize, result);
-        registers.set_register_at(y as usize, result);
+        registers.set_register_at(x as usize, vx >> 1);
     }
 
     fn math_vx_equal_vy_minus_vx(&self, registers: &mut Registers, x: u8, y: u8) {
@@ -283,18 +281,16 @@ impl TOpCodesProcessor for OpCodesProcessor {
         }
     }
 
-    fn bitop_vx_equal_vy_shl(&self, registers: &mut Registers, x: u8, y: u8) {
-        let vy = registers.get_register_at(y as usize);
-        let result = vy << 1;
+    fn bitop_vx_equal_vx_shl(&self, registers: &mut Registers, x: u8) {
+        let vx = registers.get_register_at(x as usize);
 
-        if vy & 0b1000_0000 == 0x80 {
+        if vx & 0b1000_0000 == 0b1000_0000 {
             registers.set_register_at(0xf, 0x1);
         } else {
             registers.set_register_at(0xf, 0x0);
         }
 
-        registers.set_register_at(x as usize, result);
-        registers.set_register_at(y as usize, result);
+        registers.set_register_at(x as usize, vx << 1);
     }
 
     fn cond_vx_not_equal_vy(&self, registers: &Registers, program_counter: &mut u16, x: u8, y: u8) {
@@ -859,38 +855,34 @@ mod test_opcodes_processor {
     }
 
     #[test]
-    fn test_bitop_vx_equal_vy_shr_without_overflow() {
+    fn test_bitop_vx_equal_vx_shr_without_overflow() {
         let x: u8 = 0x1;
-        let y: u8 = 0x2;
         let before = 0b0101_1110;
         let after = 0b0010_1111;
 
         let mut registers = Registers::new();
-        registers.set_register_at(y as usize, before);
+        registers.set_register_at(x as usize, before);
         registers.set_register_at(0xf, 0x1);
 
-        OpCodesProcessor::new().bitop_vx_equal_vy_shr(&mut registers, x, y);
+        OpCodesProcessor::new().bitop_vx_equal_vx_shr(&mut registers, x);
 
         assert_eq!(after, registers.get_register_at(x as usize));
-        assert_eq!(after, registers.get_register_at(y as usize));
         assert_eq!(0x0, registers.get_register_at(0xf as usize));
     }
 
     #[test]
-    fn test_bitop_vx_equal_vy_shr_with_overflow() {
+    fn test_bitop_vx_equal_vx_shr_with_overflow() {
         let x: u8 = 0x1;
-        let y: u8 = 0x2;
         let before = 0b1010_1111;
         let after = 0b0101_0111;
 
         let mut registers = Registers::new();
-        registers.set_register_at(y as usize, before);
+        registers.set_register_at(x as usize, before);
         registers.set_register_at(0xf, 0x0);
 
-        OpCodesProcessor::new().bitop_vx_equal_vy_shr(&mut registers, x, y);
+        OpCodesProcessor::new().bitop_vx_equal_vx_shr(&mut registers, x);
 
         assert_eq!(after, registers.get_register_at(x as usize));
-        assert_eq!(after, registers.get_register_at(y as usize));
         assert_eq!(0x1, registers.get_register_at(0xf as usize));
     }
 
@@ -927,38 +919,34 @@ mod test_opcodes_processor {
     }
 
     #[test]
-    fn test_bitop_vx_equal_vy_shl_with_overflow() {
+    fn test_bitop_vx_equal_vx_shl_with_overflow() {
         let x: u8 = 0x1;
-        let y: u8 = 0x2;
         let before = 0b1010_1111;
         let after = 0b0101_1110;
 
         let mut registers = Registers::new();
-        registers.set_register_at(y as usize, before);
+        registers.set_register_at(x as usize, before);
         registers.set_register_at(0xf, 0x0);
 
-        OpCodesProcessor::new().bitop_vx_equal_vy_shl(&mut registers, x, y);
+        OpCodesProcessor::new().bitop_vx_equal_vx_shl(&mut registers, x);
 
         assert_eq!(after, registers.get_register_at(x as usize));
-        assert_eq!(after, registers.get_register_at(y as usize));
         assert_eq!(0x1, registers.get_register_at(0xf as usize));
     }
 
     #[test]
-    fn test_bitop_vx_equal_vy_shl_without_overflow() {
+    fn test_bitop_vx_equal_vx_shl_without_overflow() {
         let x: u8 = 0x1;
-        let y: u8 = 0x2;
         let before = 0b0010_1111;
         let after = 0b0101_1110;
 
         let mut registers = Registers::new();
-        registers.set_register_at(y as usize, before);
+        registers.set_register_at(x as usize, before);
         registers.set_register_at(0xf, 0x1);
 
-        OpCodesProcessor::new().bitop_vx_equal_vy_shl(&mut registers, x, y);
+        OpCodesProcessor::new().bitop_vx_equal_vx_shl(&mut registers, x);
 
         assert_eq!(after, registers.get_register_at(x as usize));
-        assert_eq!(after, registers.get_register_at(y as usize));
         assert_eq!(0x0, registers.get_register_at(0xf as usize));
     }
 
