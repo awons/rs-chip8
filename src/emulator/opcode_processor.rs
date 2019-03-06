@@ -110,7 +110,7 @@ pub trait TOpCodesProcessor {
         &self,
         registers: &mut Registers,
         memory: &Memory,
-        address_register: &mut u16,
+        address_register: u16,
         x: u8,
     );
     fn keyop_if_key_equal_vx(
@@ -386,12 +386,13 @@ impl TOpCodesProcessor for OpCodesProcessor {
         &self,
         registers: &mut Registers,
         memory: &Memory,
-        address_register: &mut u16,
+        address_register: u16,
         x: u8,
     ) {
+        let mut counter = address_register;
         for z in 0x0..=x {
-            registers.set_register_at(z as usize, memory.read(*address_register));
-            *address_register += 1;
+            registers.set_register_at(z as usize, memory.read(counter));
+            counter += 1;
         }
     }
 
@@ -1143,16 +1144,19 @@ mod test_opcodes_processor {
         let x: u8 = 0xf;
         let mut memory = Memory::new();
         let mut registers = Registers::new();
-        let mut address_register: u16 = 0x0;
+        let address_register: u16 = 0x200;
 
-        for z in 0x0..x + 0x1 {
-            memory.write(z as u16, 0xf - z);
+        let range = (address_register..=(address_register + u16::from(x))).collect::<Vec<u16>>();
+
+        for (i, address) in range.iter().enumerate() {
+            memory.write(*address, i as u8);
         }
 
-        OpCodesProcessor::new().mem_reg_load(&mut registers, &memory, &mut address_register, x);
+        OpCodesProcessor::new().mem_reg_load(&mut registers, &memory, address_register, x);
 
-        for z in 0x0..x + 0x1 {
-            assert_eq!(0xf - z, registers.get_register_at(z as usize));
+        for (i, _) in range.iter().enumerate() {
+            dbg!(i);
+            assert_eq!(i as u8, registers.get_register_at(i));
         }
     }
 
