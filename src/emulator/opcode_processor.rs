@@ -336,15 +336,7 @@ impl TOpCodesProcessor for OpCodesProcessor {
 
     fn mem_i_equal_i_plus_vx(&self, registers: &mut Registers, address_register: &mut u16, x: u8) {
         let vx = registers.get_register_at(x as usize);
-
-        let result: u32 = u32::from(*address_register) + u32::from(vx);
-        if result > 0xffff {
-            registers.set_register_at(0xf, 0x1);
-        } else {
-            registers.set_register_at(0xf, 0x0);
-        }
-
-        *address_register = result as u16;
+        *address_register = *address_register + u16::from(vx);
     }
 
     fn mem_i_equal_sprite_addr_vx(&self, registers: &Registers, address_register: &mut u16, x: u8) {
@@ -1029,33 +1021,16 @@ mod test_opcodes_processor {
     }
 
     #[test]
-    fn test_mem_i_equal_i_plus_vx_without_overflow() {
+    fn test_mem_i_equal_i_plus_vx() {
         let x: u8 = 0x1;
         let mut address_register: u16 = 0xff;
         let mut registers = Registers::new();
 
         registers.set_register_at(x as usize, 0xf);
-        registers.set_register_at(0xf, 0x1);
 
         OpCodesProcessor::new().mem_i_equal_i_plus_vx(&mut registers, &mut address_register, x);
 
         assert_eq!(0x10e, address_register);
-        assert_eq!(0x0, registers.get_register_at(0xf));
-    }
-
-    #[test]
-    fn test_mem_i_equal_i_plus_vx_with_overflow() {
-        let x: u8 = 0x1;
-        let mut address_register: u16 = 0xffff;
-        let mut registers = Registers::new();
-
-        registers.set_register_at(x as usize, 0xf);
-        registers.set_register_at(0xf, 0x0);
-
-        OpCodesProcessor::new().mem_i_equal_i_plus_vx(&mut registers, &mut address_register, x);
-
-        assert_eq!(0xe, address_register);
-        assert_eq!(0x1, registers.get_register_at(0xf));
     }
 
     #[test]
