@@ -310,7 +310,7 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                         self.opcode_processor.mem_reg_dump(
                             &self.registers,
                             &mut self.memory,
-                            &mut self.address_register,
+                            self.address_register,
                             opcode.get_x(),
                         );
                         self.program_counter += 2;
@@ -617,7 +617,7 @@ mod test_chipset {
             &self,
             _registers: &Registers,
             _memory: &mut Memory,
-            _address_register: &mut u16,
+            _address_register: u16,
             _x: u8,
         ) {
             self.set_matched_method("mem_reg_dump");

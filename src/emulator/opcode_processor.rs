@@ -103,7 +103,7 @@ pub trait TOpCodesProcessor {
         &self,
         registers: &Registers,
         memory: &mut Memory,
-        address_register: &mut u16,
+        address_register: u16,
         x: u8,
     );
     fn mem_reg_load(
@@ -373,12 +373,13 @@ impl TOpCodesProcessor for OpCodesProcessor {
         &self,
         registers: &Registers,
         memory: &mut Memory,
-        address_register: &mut u16,
+        address_register: u16,
         x: u8,
     ) {
+        let mut counter = address_register;
         for z in 0x0..=x {
-            memory.write(*address_register, registers.get_register_at(z as usize));
-            *address_register += 1;
+            memory.write(counter, registers.get_register_at(z as usize));
+            counter += 1;
         }
     }
 
@@ -1126,16 +1127,18 @@ mod test_opcodes_processor {
         let x: u8 = 0xf;
         let mut memory = Memory::new();
         let mut registers = Registers::new();
-        let mut address_register: u16 = 0x0;
+        let address_register: u16 = 0x200;
 
-        for z in 0x0..0xf + 0x1 {
-            registers.set_register_at(z as usize, 0xf - z);
+        let range = (0x0..=0xf).collect::<Vec<u8>>();
+
+        for i in &range {
+            registers.set_register_at(*i as usize, i + 5);
         }
 
-        OpCodesProcessor::new().mem_reg_dump(&registers, &mut memory, &mut address_register, x);
+        OpCodesProcessor::new().mem_reg_dump(&registers, &mut memory, address_register, x);
 
-        for z in 0x0..0xf + 0x1 {
-            assert_eq!(0xf - z, memory.read(z as u16));
+        for i in range {
+            assert_eq!(i + 5, memory.read(address_register + u16::from(i)));
         }
     }
 
@@ -1155,7 +1158,6 @@ mod test_opcodes_processor {
         OpCodesProcessor::new().mem_reg_load(&mut registers, &memory, address_register, x);
 
         for (i, _) in range.iter().enumerate() {
-            dbg!(i);
             assert_eq!(i as u8, registers.get_register_at(i));
         }
     }
