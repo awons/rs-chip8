@@ -66,12 +66,10 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                 match opcode.get_parts() {
                     (0x0, 0x0, 0xe, 0x0) => {
                         self.opcode_processor.clear_screen(&mut self.display);
-                        self.program_counter += 2;
                     }
                     (0x0, 0x0, 0xe, 0xe) => {
                         self.opcode_processor
                             .return_from_subroutine(&mut self.stack, &mut self.program_counter);
-                        self.program_counter += 2;
                     }
                     (0x1, _, _, _) => {
                         self.opcode_processor
@@ -91,7 +89,6 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                             opcode.get_x(),
                             opcode.get_short_address(),
                         );
-                        self.program_counter += 2;
                     }
                     (0x4, _, _, _) => {
                         self.opcode_processor.cond_vx_not_equal_nn(
@@ -100,7 +97,6 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                             opcode.get_x(),
                             opcode.get_short_address(),
                         );
-                        self.program_counter += 2;
                     }
                     (0x5, _, _, 0x0) => {
                         self.opcode_processor.cond_vx_equal_vy(
@@ -109,7 +105,6 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                             opcode.get_x(),
                             opcode.get_short_address(),
                         );
-                        self.program_counter += 2;
                     }
                     (0x6, _, _, _) => {
                         self.opcode_processor.const_vx_equal_nn(
@@ -117,7 +112,6 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                             opcode.get_x(),
                             opcode.get_short_address(),
                         );
-                        self.program_counter += 2;
                     }
                     (0x7, _, _, _) => {
                         self.opcode_processor.const_vx_plus_equal_nn(
@@ -125,7 +119,6 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                             opcode.get_x(),
                             opcode.get_short_address(),
                         );
-                        self.program_counter += 2;
                     }
                     (0x8, _, _, 0x0) => {
                         self.opcode_processor.assign_vx_equal_vy(
@@ -133,7 +126,6 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                             opcode.get_x(),
                             opcode.get_y(),
                         );
-                        self.program_counter += 2;
                     }
                     (0x8, _, _, 0x1) => {
                         self.opcode_processor.bitop_vx_equal_vx_or_vy(
@@ -141,7 +133,6 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                             opcode.get_x(),
                             opcode.get_y(),
                         );
-                        self.program_counter += 2;
                     }
                     (0x8, _, _, 0x2) => {
                         self.opcode_processor.bitop_vx_equal_vx_and_vy(
@@ -149,7 +140,6 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                             opcode.get_x(),
                             opcode.get_y(),
                         );
-                        self.program_counter += 2;
                     }
                     (0x8, _, _, 0x3) => {
                         self.opcode_processor.bitop_vx_equal_vx_xor_vy(
@@ -157,7 +147,6 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                             opcode.get_x(),
                             opcode.get_y(),
                         );
-                        self.program_counter += 2;
                     }
                     (0x8, _, _, 0x4) => {
                         self.opcode_processor.math_vx_equal_vx_plus_vy(
@@ -165,7 +154,6 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                             opcode.get_x(),
                             opcode.get_y(),
                         );
-                        self.program_counter += 2;
                     }
                     (0x8, _, _, 0x5) => {
                         self.opcode_processor.math_vx_equal_vx_minus_vy(
@@ -173,12 +161,10 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                             opcode.get_x(),
                             opcode.get_y(),
                         );
-                        self.program_counter += 2;
                     }
                     (0x8, _, _, 0x6) => {
                         self.opcode_processor
                             .bitop_vx_equal_vx_shr(&mut self.registers, opcode.get_x());
-                        self.program_counter += 2;
                     }
                     (0x8, _, _, 0x7) => {
                         self.opcode_processor.math_vx_equal_vy_minus_vx(
@@ -186,12 +172,10 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                             opcode.get_x(),
                             opcode.get_y(),
                         );
-                        self.program_counter += 2;
                     }
                     (0x8, _, _, 0xe) => {
                         self.opcode_processor
                             .bitop_vx_equal_vx_shl(&mut self.registers, opcode.get_x());
-                        self.program_counter += 2;
                     }
                     (0x9, _, _, 0x0) => {
                         self.opcode_processor.cond_vx_not_equal_vy(
@@ -200,12 +184,10 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                             opcode.get_x(),
                             opcode.get_y(),
                         );
-                        self.program_counter += 2;
                     }
                     (0xa, _, _, _) => {
                         self.opcode_processor
                             .mem_i_equal_nnn(&mut self.address_register, opcode.get_address());
-                        self.program_counter += 2;
                     }
                     (0xb, _, _, _) => {
                         self.opcode_processor.flow_pc_equal_v0_plus_nnn(
@@ -220,7 +202,6 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                             opcode.get_x(),
                             opcode.get_short_address(),
                         );
-                        self.program_counter += 2;
                     }
                     (0xd, _, _, _) => {
                         self.opcode_processor.draw_vx_vy_n(
@@ -232,7 +213,6 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                             self.address_register,
                             &mut self.registers,
                         );
-                        self.program_counter += 2;
                     }
                     (0xe, _, 0x9, 0xe) => {
                         self.opcode_processor.keyop_if_key_equal_vx(
@@ -241,7 +221,6 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                             &mut self.program_counter,
                             opcode.get_x(),
                         );
-                        self.program_counter += 2;
                     }
                     (0xe, _, 0xa, 0x1) => {
                         self.opcode_processor.keyop_if_key_not_equal_vx(
@@ -250,7 +229,6 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                             &mut self.program_counter,
                             opcode.get_x(),
                         );
-                        self.program_counter += 2;
                     }
                     (0xf, _, 0x0, 0x7) => {
                         self.opcode_processor.timer_vx_equal_get_delay(
@@ -258,7 +236,6 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                             &mut self.registers,
                             opcode.get_x(),
                         );
-                        self.program_counter += 2;
                     }
                     (0xf, _, 0x0, 0xa) => {
                         self.opcode_processor.keyop_vx_equal_key(
@@ -267,7 +244,6 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                             opcode.get_x(),
                             &mut self.program_counter,
                         );
-                        self.program_counter += 2;
                     }
                     (0xf, _, 0x1, 0x5) => {
                         self.opcode_processor.timer_delay_timer_equal_vx(
@@ -275,11 +251,9 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                             &self.registers,
                             opcode.get_x(),
                         );
-                        self.program_counter += 2;
                     }
                     (0xf, _, 0x1, 0x8) => {
                         self.opcode_processor.sound_sound_timer_equal_vx();
-                        self.program_counter += 2;
                     }
                     (0xf, _, 0x1, 0xe) => {
                         self.opcode_processor.mem_i_equal_i_plus_vx(
@@ -287,7 +261,6 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                             &mut self.address_register,
                             opcode.get_x(),
                         );
-                        self.program_counter += 2;
                     }
                     (0xf, _, 0x2, 0x9) => {
                         self.opcode_processor.mem_i_equal_sprite_addr_vx(
@@ -295,7 +268,6 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                             &mut self.address_register,
                             opcode.get_x(),
                         );
-                        self.program_counter += 2;
                     }
                     (0xf, _, 0x3, 0x3) => {
                         self.opcode_processor.mem_bcd(
@@ -304,7 +276,6 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                             &mut self.memory,
                             opcode.get_x(),
                         );
-                        self.program_counter += 2;
                     }
                     (0xf, _, 0x5, 0x5) => {
                         self.opcode_processor.mem_reg_dump(
@@ -313,7 +284,6 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                             self.address_register,
                             opcode.get_x(),
                         );
-                        self.program_counter += 2;
                     }
                     (0xf, _, 0x6, 0x5) => {
                         self.opcode_processor.mem_reg_load(
@@ -322,7 +292,6 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                             self.address_register,
                             opcode.get_x(),
                         );
-                        self.program_counter += 2;
                     }
                     (0x0, 0x0, 0x0, 0x0) => {
                         return Err("No more opcodes".to_string());
@@ -344,6 +313,8 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
 
         let data = (u16::from(self.memory.read(self.program_counter)) << 8)
             + u16::from(self.memory.read(self.program_counter + 1));
+
+        self.program_counter += 2;
 
         Some(OpCode::from_data(data))
     }
