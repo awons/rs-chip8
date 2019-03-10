@@ -1,4 +1,4 @@
-use crate::emulator::display::TDisplay;
+use crate::emulator::display::Display;
 use crate::emulator::keyboard::Keyboard;
 use crate::emulator::memory::{Memory, Registers, Stack, MEMORY_SIZE};
 use crate::emulator::opcode_processor::{OpCode, OpCodesProcessor};
@@ -12,7 +12,7 @@ pub trait Chipset {
     fn current_opcode(&mut self) -> Option<OpCode>;
 }
 
-pub struct Chip8Chipset<O: OpCodesProcessor, D: TDisplay, K: Keyboard> {
+pub struct Chip8Chipset<O: OpCodesProcessor, D: Display, K: Keyboard> {
     memory: Memory,
     registers: Registers,
     address_register: u16,
@@ -25,7 +25,7 @@ pub struct Chip8Chipset<O: OpCodesProcessor, D: TDisplay, K: Keyboard> {
     sound_timer: u8,
 }
 
-impl<O: OpCodesProcessor, D: TDisplay, K: Keyboard> Chip8Chipset<O, D, K> {
+impl<O: OpCodesProcessor, D: Display, K: Keyboard> Chip8Chipset<O, D, K> {
     pub fn new(
         memory: Memory,
         stack: Stack,
@@ -49,7 +49,7 @@ impl<O: OpCodesProcessor, D: TDisplay, K: Keyboard> Chip8Chipset<O, D, K> {
     }
 }
 
-impl<O: OpCodesProcessor, D: TDisplay, K: Keyboard> Chipset for Chip8Chipset<O, D, K> {
+impl<O: OpCodesProcessor, D: Display, K: Keyboard> Chipset for Chip8Chipset<O, D, K> {
     fn get_memory(&self) -> &Memory {
         &self.memory
     }
@@ -333,12 +333,12 @@ impl<O: OpCodesProcessor, D: TDisplay, K: Keyboard> Chipset for Chip8Chipset<O, 
 #[cfg(test)]
 mod test_chipset {
     use super::*;
-    use crate::emulator::display::Display;
+    use crate::emulator::display::ConsoleDisplay;
     use crate::emulator::keyboard::ConsoleKeyboard;
     use crate::emulator::memory::{Memory, Registers, Stack};
     use std::cell::Cell;
 
-    impl<O: OpCodesProcessor, D: TDisplay, K: Keyboard> Chip8Chipset<O, D, K> {
+    impl<O: OpCodesProcessor, D: Display, K: Keyboard> Chip8Chipset<O, D, K> {
         pub fn get_opcode_processor(&self) -> &O {
             &self.opcode_processor
         }
@@ -356,7 +356,7 @@ mod test_chipset {
             stack,
             registers,
             MockedOpCodesProcessor::new(),
-            Display::new(),
+            ConsoleDisplay::new(),
             ConsoleKeyboard::new(),
         );
 
@@ -419,7 +419,7 @@ mod test_chipset {
                 stack,
                 registers,
                 MockedOpCodesProcessor::new(),
-                Display::new(),
+                ConsoleDisplay::new(),
                 ConsoleKeyboard::new(),
             );
 
@@ -462,7 +462,7 @@ mod test_chipset {
         }
     }
     impl OpCodesProcessor for MockedOpCodesProcessor {
-        fn clear_screen(&self, _registers: &mut dyn TDisplay) {
+        fn clear_screen(&self, _registers: &mut dyn Display) {
             self.set_matched_method("clear_screen");
         }
         fn return_from_subroutine(&self, _stack: &mut Stack, _program_counter: &mut u16) {
@@ -562,7 +562,7 @@ mod test_chipset {
             _x: u8,
             _y: u8,
             _n: u8,
-            _display: &mut dyn TDisplay,
+            _display: &mut dyn Display,
             _memory: &Memory,
             _address_register: u16,
             _registers: &mut Registers,

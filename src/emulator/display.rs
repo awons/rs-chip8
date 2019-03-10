@@ -45,18 +45,18 @@ impl ops::IndexMut<usize> for DisplayMemory {
     }
 }
 
-pub struct Display {
+pub struct ConsoleDisplay {
     memory: DisplayMemory,
     raw_terminal: RefCell<AlternateScreen<RawTerminal<Stdout>>>,
 }
 
-impl Display {
+impl ConsoleDisplay {
     pub fn new() -> Self {
         let mut terminal = AlternateScreen::from(stdout().into_raw_mode().unwrap());
         write!(terminal, "{}{}", termion::clear::All, termion::cursor::Hide).unwrap();
         terminal.flush().unwrap();
 
-        Self {
+        ConsoleDisplay {
             memory: DisplayMemory::new(),
             raw_terminal: RefCell::new(terminal),
         }
@@ -75,7 +75,7 @@ impl Display {
     }
 }
 
-impl Drop for Display {
+impl Drop for ConsoleDisplay {
     fn drop(&mut self) {
         let mut terminal = self.raw_terminal.borrow_mut();
 
@@ -84,7 +84,7 @@ impl Drop for Display {
     }
 }
 
-pub trait TDisplay {
+pub trait Display {
     fn draw_sprite(
         &mut self,
         start_x: u8,
@@ -96,7 +96,7 @@ pub trait TDisplay {
     fn clear(&mut self);
 }
 
-impl TDisplay for Display {
+impl Display for ConsoleDisplay {
     fn clear(&mut self) {
         self.memory.clear();
         let mut terminal = self.raw_terminal.borrow_mut();
@@ -164,10 +164,10 @@ impl TDisplay for Display {
 
 #[cfg(test)]
 mod test_display {
-    use super::{Display, TDisplay};
+    use super::{ConsoleDisplay, Display};
     use crate::emulator::memory::Memory;
 
-    impl Display {
+    impl ConsoleDisplay {
         fn get_pixel(&self, y: u8, x: u8) -> u8 {
             self.memory[y as usize][x as usize]
         }
@@ -181,7 +181,7 @@ mod test_display {
             memory.write(address, 1);
         }
 
-        let mut display = Display::new();
+        let mut display = ConsoleDisplay::new();
         let is_flipped = display.draw_sprite(0, 0, 3, address_register, &memory);
         assert!(!is_flipped);
     }
@@ -194,7 +194,7 @@ mod test_display {
             memory.write(address, 1);
         }
 
-        let mut display = Display::new();
+        let mut display = ConsoleDisplay::new();
         display.draw_sprite(0, 0, 3, address_register, &memory);
         let is_flipped = display.draw_sprite(0, 0, 3, address_register, &memory);
 
@@ -209,7 +209,7 @@ mod test_display {
             memory.write(address, 1);
         }
 
-        let mut display = Display::new();
+        let mut display = ConsoleDisplay::new();
         display.draw_sprite(0, 0, 3, address_register, &memory);
         display.clear();
 

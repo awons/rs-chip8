@@ -5,7 +5,7 @@ mod memory;
 mod opcode_processor;
 
 use self::chipset::{Chip8Chipset, Chipset, PROGRAM_COUNTER_BOUNDARY};
-use self::display::Display;
+use self::display::ConsoleDisplay;
 use self::keyboard::ConsoleKeyboard;
 use self::memory::{Memory, Registers, Stack};
 use self::opcode_processor::Chip8OpCodesProcessor;
@@ -39,7 +39,7 @@ impl Emulator {
                 self.stack,
                 self.registers,
                 Chip8OpCodesProcessor::new(),
-                Display::new(),
+                ConsoleDisplay::new(),
                 ConsoleKeyboard::new(),
             )),
         }

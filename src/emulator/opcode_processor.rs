@@ -1,7 +1,7 @@
 use rand;
 
 use crate::emulator::chipset::INSTRUCTION_SIZE;
-use crate::emulator::display::TDisplay;
+use crate::emulator::display::Display;
 use crate::emulator::keyboard::{Key, Keyboard};
 use crate::emulator::memory::{Memory, Registers, Stack};
 
@@ -65,7 +65,7 @@ impl fmt::LowerHex for OpCode {
 }
 
 pub trait OpCodesProcessor {
-    fn clear_screen(&self, _: &mut dyn TDisplay);
+    fn clear_screen(&self, _: &mut dyn Display);
     fn return_from_subroutine(&self, stack: &mut Stack, program_counter: &mut u16);
     fn jump_to_address(&self, program_counter: &mut u16, address: u16);
     fn call_subroutine(&self, program_counter: &mut u16, address: u16, stack: &mut Stack);
@@ -92,7 +92,7 @@ pub trait OpCodesProcessor {
         x: u8,
         y: u8,
         n: u8,
-        display: &mut dyn TDisplay,
+        display: &mut dyn Display,
         memory: &Memory,
         address_register: u16,
         registers: &mut Registers,
@@ -149,7 +149,7 @@ impl Chip8OpCodesProcessor {
 }
 
 impl OpCodesProcessor for Chip8OpCodesProcessor {
-    fn clear_screen(&self, display: &mut dyn TDisplay) {
+    fn clear_screen(&self, display: &mut dyn Display) {
         display.clear();
     }
 
@@ -311,7 +311,7 @@ impl OpCodesProcessor for Chip8OpCodesProcessor {
         vx: u8,
         vy: u8,
         n: u8,
-        display: &mut dyn TDisplay,
+        display: &mut dyn Display,
         memory: &Memory,
         address_register: u16,
         registers: &mut Registers,
@@ -494,7 +494,7 @@ mod test_opcode {
 #[cfg(test)]
 mod test_opcodes_processor {
     use super::*;
-    use crate::emulator::display::TDisplay;
+    use crate::emulator::display::Display;
     use crate::emulator::keyboard::{Key, Keyboard};
     use crate::emulator::memory::{Memory, Registers, Stack};
 
@@ -512,7 +512,7 @@ mod test_opcodes_processor {
         }
     }
 
-    impl TDisplay for MockedDisplay {
+    impl Display for MockedDisplay {
         fn draw_sprite(
             &mut self,
             x: u8,
