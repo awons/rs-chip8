@@ -68,7 +68,7 @@ pub struct InitializedEmulator {
 impl InitializedEmulator {
     pub fn run(&mut self) {
         while let Ok(()) = self.chipset.tick() {
-            sleep(Duration::from_millis(3));
+            sleep(Duration::from_millis(2));
         }
     }
 }

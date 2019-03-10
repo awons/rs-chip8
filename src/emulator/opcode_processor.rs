@@ -1,5 +1,6 @@
 use rand;
 
+use crate::emulator::chipset::INSTRUCTION_SIZE;
 use crate::emulator::display::TDisplay;
 use crate::emulator::keyboard::{Key, TKeyboard};
 use crate::emulator::memory::{Memory, Registers, Stack};
@@ -166,11 +167,9 @@ impl TOpCodesProcessor for OpCodesProcessor {
     }
 
     fn cond_vx_equal_nn(&self, registers: &Registers, program_counter: &mut u16, x: u8, nn: u8) {
-        if registers.get_register_at(x as usize) != nn {
-            return;
+        if registers.get_register_at(x as usize) == nn {
+            *program_counter += INSTRUCTION_SIZE;
         }
-
-        *program_counter += 2;
     }
 
     fn cond_vx_not_equal_nn(
@@ -180,19 +179,15 @@ impl TOpCodesProcessor for OpCodesProcessor {
         x: u8,
         nn: u8,
     ) {
-        if registers.get_register_at(x as usize) == nn {
-            return;
+        if registers.get_register_at(x as usize) != nn {
+            *program_counter += INSTRUCTION_SIZE;
         }
-
-        *program_counter += 2;
     }
 
     fn cond_vx_equal_vy(&self, registers: &Registers, program_counter: &mut u16, x: u8, y: u8) {
-        if registers.get_register_at(x as usize) != registers.get_register_at(y as usize) {
-            return;
+        if registers.get_register_at(x as usize) == registers.get_register_at(y as usize) {
+            *program_counter += INSTRUCTION_SIZE;
         }
-
-        *program_counter += 2;
     }
 
     fn const_vx_equal_nn(&self, registers: &mut Registers, x: u8, nn: u8) {
@@ -294,11 +289,9 @@ impl TOpCodesProcessor for OpCodesProcessor {
     }
 
     fn cond_vx_not_equal_vy(&self, registers: &Registers, program_counter: &mut u16, x: u8, y: u8) {
-        if registers.get_register_at(x as usize) == registers.get_register_at(y as usize) {
-            return;
+        if registers.get_register_at(x as usize) != registers.get_register_at(y as usize) {
+            *program_counter += INSTRUCTION_SIZE;
         }
-
-        *program_counter += 2;
     }
 
     fn mem_i_equal_nnn(&self, address_register: &mut u16, nnn: u16) {
@@ -401,7 +394,7 @@ impl TOpCodesProcessor for OpCodesProcessor {
                 Key::KeyESC => *program_counter = u16::max_value() - 2,
                 key => {
                     if registers.get_register_at(x as usize) == key as u8 {
-                        *program_counter += 2;
+                        *program_counter += INSTRUCTION_SIZE;
                     }
                 }
             }
@@ -420,7 +413,7 @@ impl TOpCodesProcessor for OpCodesProcessor {
                 Key::KeyESC => *program_counter = u16::max_value() - 2,
                 key => {
                     if registers.get_register_at(x as usize) != key as u8 {
-                        *program_counter += 2;
+                        *program_counter += INSTRUCTION_SIZE;
                     }
                 }
             }
@@ -721,15 +714,19 @@ mod test_opcodes_processor {
 
     #[test]
     fn test_const_vx_plus_equal_nn_will_wrap_on_overflow() {
-        let x: u8 = 0x2;
-        let nn: u8 = 200;
+        let x = 0x2;
+        let vx = 0x5;
+        let nn = 0xff;
 
         let mut registers = Registers::new();
-        registers.set_register_at(x as usize, u8::max_value());
+        registers.set_register_at(x as usize, vx);
 
         OpCodesProcessor::new().const_vx_plus_equal_nn(&mut registers, x, nn);
 
-        assert_eq!(199, registers.get_register_at(x as usize));
+        assert_eq!(
+            (u16::from(vx) % 256 + u16::from(nn) % 256) as u8,
+            registers.get_register_at(x as usize)
+        );
     }
 
     #[test]

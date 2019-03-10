@@ -4,6 +4,7 @@ use crate::emulator::memory::{Memory, Registers, Stack, MEMORY_SIZE};
 use crate::emulator::opcode_processor::{OpCode, TOpCodesProcessor};
 
 pub const PROGRAM_COUNTER_BOUNDARY: u16 = 0x200;
+pub const INSTRUCTION_SIZE: u16 = 2;
 
 pub trait Chipset {
     fn get_memory(&self) -> &Memory;
@@ -54,6 +55,8 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
     }
 
     fn tick(&mut self) -> Result<(), String> {
+        let mut skip_instruction = false;
+
         if self.delay_timer > 0 {
             self.delay_timer -= 1;
         }
@@ -61,7 +64,7 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
             self.sound_timer -= 1;
         }
 
-        match self.current_opcode() {
+        let opcode = match self.current_opcode() {
             Some(opcode) => {
                 match opcode.get_parts() {
                     (0x0, 0x0, 0xe, 0x0) => {
@@ -74,6 +77,7 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                     (0x1, _, _, _) => {
                         self.opcode_processor
                             .jump_to_address(&mut self.program_counter, opcode.get_address());
+                        skip_instruction = true;
                     }
                     (0x2, _, _, _) => {
                         self.opcode_processor.call_subroutine(
@@ -81,6 +85,7 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                             opcode.get_address(),
                             &mut self.stack,
                         );
+                        skip_instruction = true;
                     }
                     (0x3, _, _, _) => {
                         self.opcode_processor.cond_vx_equal_nn(
@@ -195,6 +200,7 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                             opcode.get_address(),
                             &self.registers,
                         );
+                        skip_instruction = true;
                     }
                     (0xc, _, _, _) => {
                         self.opcode_processor.rand_vx_equal_rand_and_nn(
@@ -303,7 +309,13 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
                 Ok(())
             }
             None => Err("No more opcodes".to_string()),
+        };
+
+        if !skip_instruction {
+            self.program_counter += INSTRUCTION_SIZE;
         }
+
+        opcode
     }
 
     fn current_opcode(&mut self) -> Option<OpCode> {
@@ -313,8 +325,6 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
 
         let data = (u16::from(self.memory.read(self.program_counter)) << 8)
             + u16::from(self.memory.read(self.program_counter + 1));
-
-        self.program_counter += 2;
 
         Some(OpCode::from_data(data))
     }
