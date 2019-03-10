@@ -1,5 +1,5 @@
 use crate::emulator::display::TDisplay;
-use crate::emulator::keyboard::TKeyboard;
+use crate::emulator::keyboard::Keyboard;
 use crate::emulator::memory::{Memory, Registers, Stack, MEMORY_SIZE};
 use crate::emulator::opcode_processor::{OpCode, TOpCodesProcessor};
 
@@ -12,7 +12,7 @@ pub trait Chipset {
     fn current_opcode(&mut self) -> Option<OpCode>;
 }
 
-pub struct Chip8Chipset<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> {
+pub struct Chip8Chipset<O: TOpCodesProcessor, D: TDisplay, K: Keyboard> {
     memory: Memory,
     registers: Registers,
     address_register: u16,
@@ -25,7 +25,7 @@ pub struct Chip8Chipset<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> {
     sound_timer: u8,
 }
 
-impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chip8Chipset<O, D, K> {
+impl<O: TOpCodesProcessor, D: TDisplay, K: Keyboard> Chip8Chipset<O, D, K> {
     pub fn new(
         memory: Memory,
         stack: Stack,
@@ -49,7 +49,7 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chip8Chipset<O, D, K> {
     }
 }
 
-impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O, D, K> {
+impl<O: TOpCodesProcessor, D: TDisplay, K: Keyboard> Chipset for Chip8Chipset<O, D, K> {
     fn get_memory(&self) -> &Memory {
         &self.memory
     }
@@ -334,11 +334,11 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chipset for Chip8Chipset<O
 mod test_chipset {
     use super::*;
     use crate::emulator::display::Display;
-    use crate::emulator::keyboard::Keyboard;
+    use crate::emulator::keyboard::ConsoleKeyboard;
     use crate::emulator::memory::{Memory, Registers, Stack};
     use std::cell::Cell;
 
-    impl<O: TOpCodesProcessor, D: TDisplay, K: TKeyboard> Chip8Chipset<O, D, K> {
+    impl<O: TOpCodesProcessor, D: TDisplay, K: Keyboard> Chip8Chipset<O, D, K> {
         pub fn get_opcode_processor(&self) -> &O {
             &self.opcode_processor
         }
@@ -357,7 +357,7 @@ mod test_chipset {
             registers,
             MockedOpCodesProcessor::new(),
             Display::new(),
-            Keyboard::new(),
+            ConsoleKeyboard::new(),
         );
 
         let opcode = chipset.current_opcode().unwrap();
@@ -420,7 +420,7 @@ mod test_chipset {
                 registers,
                 MockedOpCodesProcessor::new(),
                 Display::new(),
-                Keyboard::new(),
+                ConsoleKeyboard::new(),
             );
 
             let _ = chipset.tick();
@@ -614,7 +614,7 @@ mod test_chipset {
         }
         fn keyop_if_key_equal_vx(
             &self,
-            _keyboard: &mut dyn TKeyboard,
+            _keyboard: &mut dyn Keyboard,
             _registers: &Registers,
             _program_counter: &mut u16,
             _x: u8,
@@ -623,7 +623,7 @@ mod test_chipset {
         }
         fn keyop_if_key_not_equal_vx(
             &self,
-            _keyboard: &mut dyn TKeyboard,
+            _keyboard: &mut dyn Keyboard,
             _registers: &Registers,
             _program_counter: &mut u16,
             _x: u8,
@@ -632,7 +632,7 @@ mod test_chipset {
         }
         fn keyop_vx_equal_key(
             &self,
-            _keyboard: &mut dyn TKeyboard,
+            _keyboard: &mut dyn Keyboard,
             _registers: &mut Registers,
             _x: u8,
             _program_counter: &mut u16,

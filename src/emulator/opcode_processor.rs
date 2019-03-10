@@ -2,7 +2,7 @@ use rand;
 
 use crate::emulator::chipset::INSTRUCTION_SIZE;
 use crate::emulator::display::TDisplay;
-use crate::emulator::keyboard::{Key, TKeyboard};
+use crate::emulator::keyboard::{Key, Keyboard};
 use crate::emulator::memory::{Memory, Registers, Stack};
 
 use std::fmt;
@@ -116,21 +116,21 @@ pub trait TOpCodesProcessor {
     );
     fn keyop_if_key_equal_vx(
         &self,
-        keyboard: &mut dyn TKeyboard,
+        keyboard: &mut dyn Keyboard,
         registers: &Registers,
         program_counter: &mut u16,
         x: u8,
     );
     fn keyop_if_key_not_equal_vx(
         &self,
-        keyboard: &mut dyn TKeyboard,
+        keyboard: &mut dyn Keyboard,
         registers: &Registers,
         program_counter: &mut u16,
         x: u8,
     );
     fn keyop_vx_equal_key(
         &self,
-        keyboard: &mut dyn TKeyboard,
+        keyboard: &mut dyn Keyboard,
         registers: &mut Registers,
         x: u8,
         program_counter: &mut u16,
@@ -379,7 +379,7 @@ impl TOpCodesProcessor for OpCodesProcessor {
 
     fn keyop_if_key_equal_vx(
         &self,
-        keyboard: &mut dyn TKeyboard,
+        keyboard: &mut dyn Keyboard,
         registers: &Registers,
         program_counter: &mut u16,
         x: u8,
@@ -398,7 +398,7 @@ impl TOpCodesProcessor for OpCodesProcessor {
 
     fn keyop_if_key_not_equal_vx(
         &self,
-        keyboard: &mut dyn TKeyboard,
+        keyboard: &mut dyn Keyboard,
         registers: &Registers,
         program_counter: &mut u16,
         x: u8,
@@ -420,7 +420,7 @@ impl TOpCodesProcessor for OpCodesProcessor {
 
     fn keyop_vx_equal_key(
         &self,
-        keyboard: &mut dyn TKeyboard,
+        keyboard: &mut dyn Keyboard,
         registers: &mut Registers,
         x: u8,
         program_counter: &mut u16,
@@ -495,7 +495,7 @@ mod test_opcode {
 mod test_opcodes_processor {
     use super::*;
     use crate::emulator::display::TDisplay;
-    use crate::emulator::keyboard::{Key, TKeyboard};
+    use crate::emulator::keyboard::{Key, Keyboard};
     use crate::emulator::memory::{Memory, Registers, Stack};
 
     struct MockedDisplay {
@@ -538,7 +538,7 @@ mod test_opcodes_processor {
     }
 
     struct MockedKeyboard;
-    impl TKeyboard for MockedKeyboard {
+    impl Keyboard for MockedKeyboard {
         fn wait_for_key_press(&mut self) -> Key {
             Key::Key5
         }

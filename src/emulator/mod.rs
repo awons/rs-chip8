@@ -6,7 +6,7 @@ mod opcode_processor;
 
 use self::chipset::{Chip8Chipset, Chipset, PROGRAM_COUNTER_BOUNDARY};
 use self::display::Display;
-use self::keyboard::Keyboard;
+use self::keyboard::ConsoleKeyboard;
 use self::memory::{Memory, Registers, Stack};
 use self::opcode_processor::OpCodesProcessor;
 use std::thread::sleep;
@@ -40,7 +40,7 @@ impl Emulator {
                 self.registers,
                 OpCodesProcessor::new(),
                 Display::new(),
-                Keyboard::new(),
+                ConsoleKeyboard::new(),
             )),
         }
     }

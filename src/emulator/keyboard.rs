@@ -2,7 +2,12 @@ use std::cell::RefCell;
 use std::io::Read;
 use termion::{async_stdin, AsyncReader};
 
-pub struct Keyboard {
+pub trait Keyboard {
+    fn wait_for_key_press(&mut self) -> Key;
+    fn get_pressed_key(&mut self) -> Option<Key>;
+}
+
+pub struct ConsoleKeyboard {
     async_reader: RefCell<AsyncReader>,
     bytes_buffer: RefCell<Vec<u8>>,
 }
@@ -28,9 +33,9 @@ pub enum Key {
     KeyESC = 0xff,
 }
 
-impl Keyboard {
+impl ConsoleKeyboard {
     pub fn new() -> Self {
-        Keyboard {
+        ConsoleKeyboard {
             async_reader: RefCell::new(async_stdin()),
             bytes_buffer: RefCell::new(Vec::new()),
         }
@@ -83,12 +88,7 @@ impl Keyboard {
     }
 }
 
-pub trait TKeyboard {
-    fn wait_for_key_press(&mut self) -> Key;
-    fn get_pressed_key(&mut self) -> Option<Key>;
-}
-
-impl TKeyboard for Keyboard {
+impl Keyboard for ConsoleKeyboard {
     fn wait_for_key_press(&mut self) -> Key {
         self.read_key_wait()
     }
