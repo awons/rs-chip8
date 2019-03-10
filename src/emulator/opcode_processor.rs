@@ -64,7 +64,7 @@ impl fmt::LowerHex for OpCode {
     }
 }
 
-pub trait TOpCodesProcessor {
+pub trait OpCodesProcessor {
     fn clear_screen(&self, _: &mut dyn TDisplay);
     fn return_from_subroutine(&self, stack: &mut Stack, program_counter: &mut u16);
     fn jump_to_address(&self, program_counter: &mut u16, address: u16);
@@ -140,15 +140,15 @@ pub trait TOpCodesProcessor {
     fn sound_sound_timer_equal_vx(&self);
 }
 
-pub struct OpCodesProcessor {}
+pub struct Chip8OpCodesProcessor {}
 
-impl OpCodesProcessor {
+impl Chip8OpCodesProcessor {
     pub fn new() -> Self {
-        OpCodesProcessor {}
+        Chip8OpCodesProcessor {}
     }
 }
 
-impl TOpCodesProcessor for OpCodesProcessor {
+impl OpCodesProcessor for Chip8OpCodesProcessor {
     fn clear_screen(&self, display: &mut dyn TDisplay) {
         display.clear();
     }
@@ -552,7 +552,7 @@ mod test_opcodes_processor {
     fn test_clear_display() {
         let mut display = MockedDisplay::new();
 
-        OpCodesProcessor::new().clear_screen(&mut display);
+        Chip8OpCodesProcessor::new().clear_screen(&mut display);
 
         assert!(display.clear_called);
     }
@@ -565,7 +565,7 @@ mod test_opcodes_processor {
         stack.push(program_counter);
         program_counter += 1;
 
-        OpCodesProcessor::new().return_from_subroutine(&mut stack, &mut program_counter);
+        Chip8OpCodesProcessor::new().return_from_subroutine(&mut stack, &mut program_counter);
 
         assert_eq!(0x100, program_counter);
     }
@@ -577,7 +577,7 @@ mod test_opcodes_processor {
 
         memory.write(0x100, 0x5);
 
-        OpCodesProcessor::new().jump_to_address(&mut program_counter, 0x100);
+        Chip8OpCodesProcessor::new().jump_to_address(&mut program_counter, 0x100);
 
         assert_eq!(0x5, memory.read(program_counter));
     }
@@ -587,7 +587,7 @@ mod test_opcodes_processor {
         let mut stack = Stack::new();
         let mut program_counter = 0x100;
 
-        OpCodesProcessor::new().call_subroutine(&mut program_counter, 0x150, &mut stack);
+        Chip8OpCodesProcessor::new().call_subroutine(&mut program_counter, 0x150, &mut stack);
 
         assert_eq!(0x150, program_counter);
         assert_eq!(0x100, stack.pop());
@@ -603,7 +603,7 @@ mod test_opcodes_processor {
 
         let mut program_counter: u16 = 0x100;
 
-        OpCodesProcessor::new().cond_vx_equal_nn(&registers, &mut program_counter, x, nn);
+        Chip8OpCodesProcessor::new().cond_vx_equal_nn(&registers, &mut program_counter, x, nn);
 
         assert_eq!(0x102, program_counter);
     }
@@ -618,7 +618,7 @@ mod test_opcodes_processor {
 
         let mut program_counter: u16 = 0x100;
 
-        OpCodesProcessor::new().cond_vx_equal_nn(&registers, &mut program_counter, x, nn);
+        Chip8OpCodesProcessor::new().cond_vx_equal_nn(&registers, &mut program_counter, x, nn);
 
         assert_eq!(0x100, program_counter);
     }
@@ -633,7 +633,7 @@ mod test_opcodes_processor {
 
         let mut program_counter: u16 = 0x100;
 
-        OpCodesProcessor::new().cond_vx_not_equal_nn(&registers, &mut program_counter, x, nn);
+        Chip8OpCodesProcessor::new().cond_vx_not_equal_nn(&registers, &mut program_counter, x, nn);
 
         assert_eq!(0x102, program_counter);
     }
@@ -648,7 +648,7 @@ mod test_opcodes_processor {
 
         let mut program_counter: u16 = 0x100;
 
-        OpCodesProcessor::new().cond_vx_not_equal_nn(&registers, &mut program_counter, x, nn);
+        Chip8OpCodesProcessor::new().cond_vx_not_equal_nn(&registers, &mut program_counter, x, nn);
 
         assert_eq!(0x100, program_counter);
     }
@@ -664,7 +664,7 @@ mod test_opcodes_processor {
 
         let mut program_counter: u16 = 0x100;
 
-        OpCodesProcessor::new().cond_vx_equal_vy(&registers, &mut program_counter, x, y);
+        Chip8OpCodesProcessor::new().cond_vx_equal_vy(&registers, &mut program_counter, x, y);
 
         assert_eq!(0x102, program_counter);
     }
@@ -680,7 +680,7 @@ mod test_opcodes_processor {
 
         let mut program_counter: u16 = 0x100;
 
-        OpCodesProcessor::new().cond_vx_equal_vy(&registers, &mut program_counter, x, y);
+        Chip8OpCodesProcessor::new().cond_vx_equal_vy(&registers, &mut program_counter, x, y);
 
         assert_eq!(0x100, program_counter);
     }
@@ -692,7 +692,7 @@ mod test_opcodes_processor {
 
         let mut registers = Registers::new();
 
-        OpCodesProcessor::new().const_vx_equal_nn(&mut registers, x, nn);
+        Chip8OpCodesProcessor::new().const_vx_equal_nn(&mut registers, x, nn);
 
         assert_eq!(0x10, registers.get_register_at(x as usize));
     }
@@ -705,7 +705,7 @@ mod test_opcodes_processor {
         let mut registers = Registers::new();
         registers.set_register_at(x as usize, 0x5);
 
-        OpCodesProcessor::new().const_vx_plus_equal_nn(&mut registers, x, nn);
+        Chip8OpCodesProcessor::new().const_vx_plus_equal_nn(&mut registers, x, nn);
 
         assert_eq!(0x6, registers.get_register_at(x as usize));
     }
@@ -719,7 +719,7 @@ mod test_opcodes_processor {
         let mut registers = Registers::new();
         registers.set_register_at(x as usize, vx);
 
-        OpCodesProcessor::new().const_vx_plus_equal_nn(&mut registers, x, nn);
+        Chip8OpCodesProcessor::new().const_vx_plus_equal_nn(&mut registers, x, nn);
 
         assert_eq!(
             (u16::from(vx) % 256 + u16::from(nn) % 256) as u8,
@@ -736,7 +736,7 @@ mod test_opcodes_processor {
         registers.set_register_at(x as usize, 0x1);
         registers.set_register_at(y as usize, 0x2);
 
-        OpCodesProcessor::new().assign_vx_equal_vy(&mut registers, x, y);
+        Chip8OpCodesProcessor::new().assign_vx_equal_vy(&mut registers, x, y);
 
         assert_eq!(0x2, registers.get_register_at(x as usize));
     }
@@ -745,7 +745,7 @@ mod test_opcodes_processor {
     fn test_bitop_vx_equal_vx_or_vy() {
         let (mut registers, x, y) = setup_bitop();
 
-        OpCodesProcessor::new().bitop_vx_equal_vx_or_vy(&mut registers, x, y);
+        Chip8OpCodesProcessor::new().bitop_vx_equal_vx_or_vy(&mut registers, x, y);
 
         assert_eq!(0x5f, registers.get_register_at(x as usize));
     }
@@ -754,7 +754,7 @@ mod test_opcodes_processor {
     fn test_bitop_vx_equal_vx_and_vy() {
         let (mut registers, x, y) = setup_bitop();
 
-        OpCodesProcessor::new().bitop_vx_equal_vx_and_vy(&mut registers, x, y);
+        Chip8OpCodesProcessor::new().bitop_vx_equal_vx_and_vy(&mut registers, x, y);
 
         assert_eq!(0x40, registers.get_register_at(x as usize));
     }
@@ -763,7 +763,7 @@ mod test_opcodes_processor {
     fn test_bitop_vx_equal_vx_xor_vy() {
         let (mut registers, x, y) = setup_bitop();
 
-        OpCodesProcessor::new().bitop_vx_equal_vx_xor_vy(&mut registers, x, y);
+        Chip8OpCodesProcessor::new().bitop_vx_equal_vx_xor_vy(&mut registers, x, y);
 
         assert_eq!(0x1f, registers.get_register_at(x as usize));
     }
@@ -789,7 +789,7 @@ mod test_opcodes_processor {
         registers.set_register_at(y as usize, 0xa);
         registers.set_register_at(0xf, 0x1);
 
-        OpCodesProcessor::new().math_vx_equal_vx_plus_vy(&mut registers, x, y);
+        Chip8OpCodesProcessor::new().math_vx_equal_vx_plus_vy(&mut registers, x, y);
 
         assert_eq!(0x19, registers.get_register_at(x as usize));
         assert_eq!(0x0, registers.get_register_at(0xf));
@@ -805,7 +805,7 @@ mod test_opcodes_processor {
         registers.set_register_at(y as usize, 0x1);
         registers.set_register_at(0xf, 0x0);
 
-        OpCodesProcessor::new().math_vx_equal_vx_plus_vy(&mut registers, x, y);
+        Chip8OpCodesProcessor::new().math_vx_equal_vx_plus_vy(&mut registers, x, y);
 
         assert_eq!(0x0, registers.get_register_at(x as usize));
         assert_eq!(0x1, registers.get_register_at(0xf));
@@ -821,7 +821,7 @@ mod test_opcodes_processor {
         registers.set_register_at(y as usize, 0x2);
         registers.set_register_at(0xf, 0x0);
 
-        OpCodesProcessor::new().math_vx_equal_vx_minus_vy(&mut registers, x, y);
+        Chip8OpCodesProcessor::new().math_vx_equal_vx_minus_vy(&mut registers, x, y);
 
         assert_eq!(0xfd, registers.get_register_at(x as usize));
         assert_eq!(0x1, registers.get_register_at(0xf));
@@ -837,7 +837,7 @@ mod test_opcodes_processor {
         registers.set_register_at(y as usize, 0x1);
         registers.set_register_at(0xf, 0x1);
 
-        OpCodesProcessor::new().math_vx_equal_vx_minus_vy(&mut registers, x, y);
+        Chip8OpCodesProcessor::new().math_vx_equal_vx_minus_vy(&mut registers, x, y);
 
         assert_eq!(0xff, registers.get_register_at(x as usize));
         assert_eq!(0x0, registers.get_register_at(0xf));
@@ -853,7 +853,7 @@ mod test_opcodes_processor {
         registers.set_register_at(x as usize, before);
         registers.set_register_at(0xf, 0x1);
 
-        OpCodesProcessor::new().bitop_vx_equal_vx_shr(&mut registers, x);
+        Chip8OpCodesProcessor::new().bitop_vx_equal_vx_shr(&mut registers, x);
 
         assert_eq!(after, registers.get_register_at(x as usize));
         assert_eq!(0x0, registers.get_register_at(0xf as usize));
@@ -869,7 +869,7 @@ mod test_opcodes_processor {
         registers.set_register_at(x as usize, before);
         registers.set_register_at(0xf, 0x0);
 
-        OpCodesProcessor::new().bitop_vx_equal_vx_shr(&mut registers, x);
+        Chip8OpCodesProcessor::new().bitop_vx_equal_vx_shr(&mut registers, x);
 
         assert_eq!(after, registers.get_register_at(x as usize));
         assert_eq!(0x1, registers.get_register_at(0xf as usize));
@@ -885,7 +885,7 @@ mod test_opcodes_processor {
         registers.set_register_at(y as usize, 0xff);
         registers.set_register_at(0xf, 0x0);
 
-        OpCodesProcessor::new().math_vx_equal_vy_minus_vx(&mut registers, x, y);
+        Chip8OpCodesProcessor::new().math_vx_equal_vy_minus_vx(&mut registers, x, y);
 
         assert_eq!(0xfd, registers.get_register_at(x as usize));
         assert_eq!(0x1, registers.get_register_at(0xf));
@@ -901,7 +901,7 @@ mod test_opcodes_processor {
         registers.set_register_at(y as usize, 0x0);
         registers.set_register_at(0xf, 0x1);
 
-        OpCodesProcessor::new().math_vx_equal_vy_minus_vx(&mut registers, x, y);
+        Chip8OpCodesProcessor::new().math_vx_equal_vy_minus_vx(&mut registers, x, y);
 
         assert_eq!(0xff, registers.get_register_at(x as usize));
         assert_eq!(0x0, registers.get_register_at(0xf));
@@ -917,7 +917,7 @@ mod test_opcodes_processor {
         registers.set_register_at(x as usize, before);
         registers.set_register_at(0xf, 0x0);
 
-        OpCodesProcessor::new().bitop_vx_equal_vx_shl(&mut registers, x);
+        Chip8OpCodesProcessor::new().bitop_vx_equal_vx_shl(&mut registers, x);
 
         assert_eq!(after, registers.get_register_at(x as usize));
         assert_eq!(0x1, registers.get_register_at(0xf as usize));
@@ -933,7 +933,7 @@ mod test_opcodes_processor {
         registers.set_register_at(x as usize, before);
         registers.set_register_at(0xf, 0x1);
 
-        OpCodesProcessor::new().bitop_vx_equal_vx_shl(&mut registers, x);
+        Chip8OpCodesProcessor::new().bitop_vx_equal_vx_shl(&mut registers, x);
 
         assert_eq!(after, registers.get_register_at(x as usize));
         assert_eq!(0x0, registers.get_register_at(0xf as usize));
@@ -950,7 +950,7 @@ mod test_opcodes_processor {
         registers.set_register_at(x as usize, 0xff);
         registers.set_register_at(y as usize, 0x0f);
 
-        OpCodesProcessor::new().cond_vx_not_equal_vy(&registers, &mut program_counter, x, y);
+        Chip8OpCodesProcessor::new().cond_vx_not_equal_vy(&registers, &mut program_counter, x, y);
 
         assert_eq!(0x102, program_counter);
     }
@@ -966,7 +966,7 @@ mod test_opcodes_processor {
         registers.set_register_at(x as usize, 0xff);
         registers.set_register_at(y as usize, 0xff);
 
-        OpCodesProcessor::new().cond_vx_not_equal_vy(&registers, &mut program_counter, x, y);
+        Chip8OpCodesProcessor::new().cond_vx_not_equal_vy(&registers, &mut program_counter, x, y);
 
         assert_eq!(0x100, program_counter);
     }
@@ -976,7 +976,7 @@ mod test_opcodes_processor {
         let nnn: u16 = 0x200;
         let mut address_register: u16 = 0x100;
 
-        OpCodesProcessor::new().mem_i_equal_nnn(&mut address_register, nnn);
+        Chip8OpCodesProcessor::new().mem_i_equal_nnn(&mut address_register, nnn);
 
         assert_eq!(0x200, address_register);
     }
@@ -989,7 +989,11 @@ mod test_opcodes_processor {
         let mut registers = Registers::new();
         registers.set_register_at(0, 0xff);
 
-        OpCodesProcessor::new().flow_pc_equal_v0_plus_nnn(&mut program_counter, nnn, &registers);
+        Chip8OpCodesProcessor::new().flow_pc_equal_v0_plus_nnn(
+            &mut program_counter,
+            nnn,
+            &registers,
+        );
 
         assert_eq!(0x2ff, program_counter);
     }
@@ -1001,13 +1005,13 @@ mod test_opcodes_processor {
 
         let mut registers = Registers::new();
 
-        OpCodesProcessor::new().rand_vx_equal_rand_and_nn(&mut registers, x, nn);
+        Chip8OpCodesProcessor::new().rand_vx_equal_rand_and_nn(&mut registers, x, nn);
         let x_1 = registers.get_register_at(x as usize);
 
-        OpCodesProcessor::new().rand_vx_equal_rand_and_nn(&mut registers, x, nn);
+        Chip8OpCodesProcessor::new().rand_vx_equal_rand_and_nn(&mut registers, x, nn);
         let x_2 = registers.get_register_at(x as usize);
 
-        OpCodesProcessor::new().rand_vx_equal_rand_and_nn(&mut registers, x, nn);
+        Chip8OpCodesProcessor::new().rand_vx_equal_rand_and_nn(&mut registers, x, nn);
         let x_3 = registers.get_register_at(x as usize);
 
         assert_ne!(x_1, x_2);
@@ -1023,7 +1027,11 @@ mod test_opcodes_processor {
 
         registers.set_register_at(x as usize, 0xf);
 
-        OpCodesProcessor::new().mem_i_equal_i_plus_vx(&mut registers, &mut address_register, x);
+        Chip8OpCodesProcessor::new().mem_i_equal_i_plus_vx(
+            &mut registers,
+            &mut address_register,
+            x,
+        );
 
         assert_eq!(0x10e, address_register);
     }
@@ -1036,7 +1044,7 @@ mod test_opcodes_processor {
         let mut registers = Registers::new();
 
         registers.set_register_at(x as usize, 0x4);
-        OpCodesProcessor::new().mem_i_equal_sprite_addr_vx(
+        Chip8OpCodesProcessor::new().mem_i_equal_sprite_addr_vx(
             &mut registers,
             &mut address_register,
             x,
@@ -1054,7 +1062,7 @@ mod test_opcodes_processor {
         let mut registers = Registers::new();
 
         registers.set_register_at(x as usize, 0xa1);
-        OpCodesProcessor::new().mem_i_equal_sprite_addr_vx(
+        Chip8OpCodesProcessor::new().mem_i_equal_sprite_addr_vx(
             &mut registers,
             &mut address_register,
             x,
@@ -1069,7 +1077,7 @@ mod test_opcodes_processor {
         let mut registers = Registers::new();
 
         registers.set_register_at(x as usize, 253);
-        OpCodesProcessor::new().mem_bcd(&registers, address_register, &mut memory, x);
+        Chip8OpCodesProcessor::new().mem_bcd(&registers, address_register, &mut memory, x);
 
         assert_eq!(2, memory.read(address_register));
         assert_eq!(5, memory.read(address_register + 1));
@@ -1077,7 +1085,7 @@ mod test_opcodes_processor {
 
         let mut memory = Memory::new();
         registers.set_register_at(x as usize, 49);
-        OpCodesProcessor::new().mem_bcd(&registers, address_register, &mut memory, x);
+        Chip8OpCodesProcessor::new().mem_bcd(&registers, address_register, &mut memory, x);
 
         assert_eq!(0, memory.read(address_register));
         assert_eq!(4, memory.read(address_register + 1));
@@ -1085,7 +1093,7 @@ mod test_opcodes_processor {
 
         let mut memory = Memory::new();
         registers.set_register_at(x as usize, 7);
-        OpCodesProcessor::new().mem_bcd(&registers, address_register, &mut memory, x);
+        Chip8OpCodesProcessor::new().mem_bcd(&registers, address_register, &mut memory, x);
 
         assert_eq!(0, memory.read(address_register));
         assert_eq!(0, memory.read(address_register + 1));
@@ -1105,7 +1113,7 @@ mod test_opcodes_processor {
             registers.set_register_at(*i as usize, i + 5);
         }
 
-        OpCodesProcessor::new().mem_reg_dump(&registers, &mut memory, address_register, x);
+        Chip8OpCodesProcessor::new().mem_reg_dump(&registers, &mut memory, address_register, x);
 
         for i in range {
             assert_eq!(i + 5, memory.read(address_register + u16::from(i)));
@@ -1125,7 +1133,7 @@ mod test_opcodes_processor {
             memory.write(*address, i as u8);
         }
 
-        OpCodesProcessor::new().mem_reg_load(&mut registers, &memory, address_register, x);
+        Chip8OpCodesProcessor::new().mem_reg_load(&mut registers, &memory, address_register, x);
 
         for (i, _) in range.iter().enumerate() {
             assert_eq!(i as u8, registers.get_register_at(i));
@@ -1141,7 +1149,7 @@ mod test_opcodes_processor {
 
         registers.set_register_at(0, 10);
 
-        OpCodesProcessor::new().draw_vx_vy_n(
+        Chip8OpCodesProcessor::new().draw_vx_vy_n(
             0,
             1,
             3,
@@ -1164,7 +1172,7 @@ mod test_opcodes_processor {
 
         registers.set_register_at(0, 11);
 
-        OpCodesProcessor::new().draw_vx_vy_n(
+        Chip8OpCodesProcessor::new().draw_vx_vy_n(
             0,
             1,
             3,
@@ -1184,7 +1192,7 @@ mod test_opcodes_processor {
         let mut registers = Registers::new();
         let mut program_counter = 0;
 
-        OpCodesProcessor::new().keyop_vx_equal_key(
+        Chip8OpCodesProcessor::new().keyop_vx_equal_key(
             &mut keyboard,
             &mut registers,
             0x1,
@@ -1202,7 +1210,7 @@ mod test_opcodes_processor {
 
         registers.set_register_at(0x1, 0x4);
 
-        OpCodesProcessor::new().keyop_if_key_equal_vx(
+        Chip8OpCodesProcessor::new().keyop_if_key_equal_vx(
             &mut keyboard,
             &mut registers,
             &mut program_counter,
@@ -1220,7 +1228,7 @@ mod test_opcodes_processor {
 
         registers.set_register_at(0x1, 0x5);
 
-        OpCodesProcessor::new().keyop_if_key_equal_vx(
+        Chip8OpCodesProcessor::new().keyop_if_key_equal_vx(
             &mut keyboard,
             &mut registers,
             &mut program_counter,
@@ -1235,7 +1243,7 @@ mod test_opcodes_processor {
         let delay_timer = 0x20;
         let mut registers = Registers::new();
 
-        OpCodesProcessor::new().timer_vx_equal_get_delay(delay_timer, &mut registers, 0xa);
+        Chip8OpCodesProcessor::new().timer_vx_equal_get_delay(delay_timer, &mut registers, 0xa);
 
         assert_eq!(0x20, registers.get_register_at(0xa));
     }
@@ -1247,7 +1255,7 @@ mod test_opcodes_processor {
 
         registers.set_register_at(0xa, 0x30);
 
-        OpCodesProcessor::new().timer_delay_timer_equal_vx(&mut delay_timer, &registers, 0xa);
+        Chip8OpCodesProcessor::new().timer_delay_timer_equal_vx(&mut delay_timer, &registers, 0xa);
 
         assert_eq!(0x30, delay_timer);
     }

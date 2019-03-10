@@ -8,7 +8,7 @@ use self::chipset::{Chip8Chipset, Chipset, PROGRAM_COUNTER_BOUNDARY};
 use self::display::Display;
 use self::keyboard::ConsoleKeyboard;
 use self::memory::{Memory, Registers, Stack};
-use self::opcode_processor::OpCodesProcessor;
+use self::opcode_processor::Chip8OpCodesProcessor;
 use std::thread::sleep;
 use std::time::Duration;
 
@@ -38,7 +38,7 @@ impl Emulator {
                 self.memory,
                 self.stack,
                 self.registers,
-                OpCodesProcessor::new(),
+                Chip8OpCodesProcessor::new(),
                 Display::new(),
                 ConsoleKeyboard::new(),
             )),

@@ -1,7 +1,7 @@
 use crate::emulator::display::TDisplay;
 use crate::emulator::keyboard::Keyboard;
 use crate::emulator::memory::{Memory, Registers, Stack, MEMORY_SIZE};
-use crate::emulator::opcode_processor::{OpCode, TOpCodesProcessor};
+use crate::emulator::opcode_processor::{OpCode, OpCodesProcessor};
 
 pub const PROGRAM_COUNTER_BOUNDARY: u16 = 0x200;
 pub const INSTRUCTION_SIZE: u16 = 2;
@@ -12,7 +12,7 @@ pub trait Chipset {
     fn current_opcode(&mut self) -> Option<OpCode>;
 }
 
-pub struct Chip8Chipset<O: TOpCodesProcessor, D: TDisplay, K: Keyboard> {
+pub struct Chip8Chipset<O: OpCodesProcessor, D: TDisplay, K: Keyboard> {
     memory: Memory,
     registers: Registers,
     address_register: u16,
@@ -25,7 +25,7 @@ pub struct Chip8Chipset<O: TOpCodesProcessor, D: TDisplay, K: Keyboard> {
     sound_timer: u8,
 }
 
-impl<O: TOpCodesProcessor, D: TDisplay, K: Keyboard> Chip8Chipset<O, D, K> {
+impl<O: OpCodesProcessor, D: TDisplay, K: Keyboard> Chip8Chipset<O, D, K> {
     pub fn new(
         memory: Memory,
         stack: Stack,
@@ -49,7 +49,7 @@ impl<O: TOpCodesProcessor, D: TDisplay, K: Keyboard> Chip8Chipset<O, D, K> {
     }
 }
 
-impl<O: TOpCodesProcessor, D: TDisplay, K: Keyboard> Chipset for Chip8Chipset<O, D, K> {
+impl<O: OpCodesProcessor, D: TDisplay, K: Keyboard> Chipset for Chip8Chipset<O, D, K> {
     fn get_memory(&self) -> &Memory {
         &self.memory
     }
@@ -338,7 +338,7 @@ mod test_chipset {
     use crate::emulator::memory::{Memory, Registers, Stack};
     use std::cell::Cell;
 
-    impl<O: TOpCodesProcessor, D: TDisplay, K: Keyboard> Chip8Chipset<O, D, K> {
+    impl<O: OpCodesProcessor, D: TDisplay, K: Keyboard> Chip8Chipset<O, D, K> {
         pub fn get_opcode_processor(&self) -> &O {
             &self.opcode_processor
         }
@@ -461,7 +461,7 @@ mod test_chipset {
             self.matched_method.take()
         }
     }
-    impl TOpCodesProcessor for MockedOpCodesProcessor {
+    impl OpCodesProcessor for MockedOpCodesProcessor {
         fn clear_screen(&self, _registers: &mut dyn TDisplay) {
             self.set_matched_method("clear_screen");
         }
