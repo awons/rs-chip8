@@ -254,12 +254,7 @@ impl TOpCodesProcessor for OpCodesProcessor {
     fn bitop_vx_equal_vx_shr(&self, registers: &mut Registers, x: u8) {
         let vx = registers.get_register_at(x as usize);
 
-        if vx & 0b0000_0001 == 0b0000_0001 {
-            registers.set_register_at(0xf, 0x1);
-        } else {
-            registers.set_register_at(0xf, 0x0);
-        }
-
+        registers.set_register_at(0xf, vx & 0b0000_0001);
         registers.set_register_at(x as usize, vx >> 1);
     }
 
@@ -408,14 +403,17 @@ impl TOpCodesProcessor for OpCodesProcessor {
         program_counter: &mut u16,
         x: u8,
     ) {
-        if let Some(key) = keyboard.get_pressed_key() {
-            match key {
+        match keyboard.get_pressed_key() {
+            Some(key) => match key {
                 Key::KeyESC => *program_counter = u16::max_value() - 2,
                 key => {
                     if registers.get_register_at(x as usize) != key as u8 {
                         *program_counter += INSTRUCTION_SIZE;
                     }
                 }
+            },
+            None => {
+                *program_counter += INSTRUCTION_SIZE;
             }
         }
     }
