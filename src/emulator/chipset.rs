@@ -3,8 +3,6 @@ use crate::emulator::keyboard::TKeyboard;
 use crate::emulator::memory::{Memory, Registers, Stack, MEMORY_SIZE};
 use crate::emulator::opcode_processor::{OpCode, TOpCodesProcessor};
 
-use std::io::Write;
-
 pub const PROGRAM_COUNTER_BOUNDARY: u16 = 0x200;
 pub const INSTRUCTION_SIZE: u16 = 2;
 
