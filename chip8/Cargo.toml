@@ -1,0 +1,16 @@
+[package]
+name = "chip8"
+version = "0.1.0"
+authors = ["Aleksander Wons <aleksander.wons@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+rand = "^0.5"
+termion = "1.5.1"
+
+[profile.release]
+lto = true
+debug-assertions = false
+
+[lib]
+name = "chip8"

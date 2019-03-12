@@ -1,7 +1,7 @@
-use crate::emulator::display::Display;
-use crate::emulator::keyboard::Keyboard;
-use crate::emulator::memory::{Memory, Registers, Stack, MEMORY_SIZE};
-use crate::emulator::opcode_processor::{OpCode, OpCodesProcessor};
+use crate::display::Display;
+use crate::keyboard::Keyboard;
+use crate::memory::{Memory, Registers, Stack, MEMORY_SIZE};
+use crate::opcode_processor::{OpCode, OpCodesProcessor};
 
 pub const PROGRAM_COUNTER_BOUNDARY: u16 = 0x200;
 pub const INSTRUCTION_SIZE: u16 = 2;
@@ -333,9 +333,9 @@ impl<O: OpCodesProcessor, D: Display, K: Keyboard> Chipset for Chip8Chipset<O, D
 #[cfg(test)]
 mod test_chipset {
     use super::*;
-    use crate::emulator::display::ConsoleDisplay;
-    use crate::emulator::keyboard::ConsoleKeyboard;
-    use crate::emulator::memory::{Memory, Registers, Stack};
+    use crate::display::ConsoleDisplay;
+    use crate::keyboard::ConsoleKeyboard;
+    use crate::memory::{Memory, Registers, Stack};
     use std::cell::Cell;
 
     impl<O: OpCodesProcessor, D: Display, K: Keyboard> Chip8Chipset<O, D, K> {

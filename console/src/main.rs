@@ -1,6 +1,4 @@
-mod emulator;
-
-use crate::emulator::Emulator;
+use chip8::Emulator;
 use std::env;
 use std::fs::File;
 use std::io::Read;

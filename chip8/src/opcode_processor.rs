@@ -1,9 +1,9 @@
 use rand;
 
-use crate::emulator::chipset::INSTRUCTION_SIZE;
-use crate::emulator::display::Display;
-use crate::emulator::keyboard::{Key, Keyboard};
-use crate::emulator::memory::{Memory, Registers, Stack};
+use crate::chipset::INSTRUCTION_SIZE;
+use crate::display::Display;
+use crate::keyboard::{Key, Keyboard};
+use crate::memory::{Memory, Registers, Stack};
 
 use std::fmt;
 use std::result;
@@ -494,9 +494,9 @@ mod test_opcode {
 #[cfg(test)]
 mod test_opcodes_processor {
     use super::*;
-    use crate::emulator::display::Display;
-    use crate::emulator::keyboard::{Key, Keyboard};
-    use crate::emulator::memory::{Memory, Registers, Stack};
+    use crate::display::Display;
+    use crate::keyboard::{Key, Keyboard};
+    use crate::memory::{Memory, Registers, Stack};
 
     struct MockedDisplay {
         draw_sprite_called: bool,

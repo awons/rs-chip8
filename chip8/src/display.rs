@@ -1,4 +1,4 @@
-use crate::emulator::memory::Memory;
+use crate::memory::Memory;
 use std::cell::RefCell;
 use std::io::{stdout, Stdout, Write};
 use std::ops;
@@ -165,7 +165,7 @@ impl Display for ConsoleDisplay {
 #[cfg(test)]
 mod test_display {
     use super::{ConsoleDisplay, Display};
-    use crate::emulator::memory::Memory;
+    use crate::memory::Memory;
 
     impl ConsoleDisplay {
         fn get_pixel(&self, y: u8, x: u8) -> u8 {

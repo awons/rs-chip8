@@ -1,13 +1,6 @@
-[package]
-name = "chip8-emulator"
-version = "0.0.1"
-authors = ["Aleksander Wons <aleksander.wons@gmail.com>"]
-edition = "2018"
+[workspace]
 
-[dependencies]
-rand = "^0.5"
-termion = "1.5.1"
-
-[profile.release]
-lto = true
-debug-assertions = false
+members = [
+    "console",
+    "chip8"
+]
