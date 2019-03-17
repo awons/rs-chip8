@@ -1,4 +1,5 @@
-use crate::display::Display;
+use crate::display::GraphicDisplay;
+use crate::gpu::Gpu;
 use crate::keyboard::Keyboard;
 use crate::memory::{Memory, Registers, Stack, MEMORY_SIZE};
 use crate::opcode_processor::{OpCode, OpCodesProcessor};
@@ -12,27 +13,29 @@ pub trait Chipset {
     fn current_opcode(&mut self) -> Option<OpCode>;
 }
 
-pub struct Chip8Chipset<O: OpCodesProcessor, D: Display, K: Keyboard> {
+pub struct Chip8Chipset<O: OpCodesProcessor, G: Gpu, K: Keyboard, D: GraphicDisplay> {
     memory: Memory,
     registers: Registers,
     address_register: u16,
     program_counter: u16,
     stack: Stack,
     opcode_processor: O,
-    display: D,
+    gpu: G,
     keyboard: K,
     delay_timer: u8,
     sound_timer: u8,
+    display: D,
 }
 
-impl<O: OpCodesProcessor, D: Display, K: Keyboard> Chip8Chipset<O, D, K> {
+impl<O: OpCodesProcessor, G: Gpu, K: Keyboard, D: GraphicDisplay> Chip8Chipset<O, G, K, D> {
     pub fn new(
         memory: Memory,
         stack: Stack,
         registers: Registers,
         opcode_processor: O,
-        display: D,
+        gpu: G,
         keyboard: K,
+        display: D,
     ) -> Self {
         Self {
             memory,
@@ -41,15 +44,18 @@ impl<O: OpCodesProcessor, D: Display, K: Keyboard> Chip8Chipset<O, D, K> {
             program_counter: PROGRAM_COUNTER_BOUNDARY,
             stack,
             opcode_processor,
-            display,
+            gpu,
             keyboard,
             delay_timer: 0,
             sound_timer: 0,
+            display,
         }
     }
 }
 
-impl<O: OpCodesProcessor, D: Display, K: Keyboard> Chipset for Chip8Chipset<O, D, K> {
+impl<O: OpCodesProcessor, G: Gpu, K: Keyboard, D: GraphicDisplay> Chipset
+    for Chip8Chipset<O, G, K, D>
+{
     fn get_memory(&self) -> &Memory {
         &self.memory
     }
@@ -68,7 +74,8 @@ impl<O: OpCodesProcessor, D: Display, K: Keyboard> Chipset for Chip8Chipset<O, D
             Some(opcode) => {
                 match opcode.get_parts() {
                     (0x0, 0x0, 0xe, 0x0) => {
-                        self.opcode_processor.clear_screen(&mut self.display);
+                        self.opcode_processor.clear_screen(&mut self.gpu);
+                        self.display.draw(self.gpu.get_memory());
                     }
                     (0x0, 0x0, 0xe, 0xe) => {
                         self.opcode_processor
@@ -214,11 +221,12 @@ impl<O: OpCodesProcessor, D: Display, K: Keyboard> Chipset for Chip8Chipset<O, D
                             opcode.get_x(),
                             opcode.get_y(),
                             opcode.get_n(),
-                            &mut self.display,
+                            &mut self.gpu,
                             &self.memory,
                             self.address_register,
                             &mut self.registers,
                         );
+                        self.display.draw(self.gpu.get_memory());
                     }
                     (0xe, _, 0x9, 0xe) => {
                         self.opcode_processor.keyop_if_key_equal_vx(
@@ -333,14 +341,36 @@ impl<O: OpCodesProcessor, D: Display, K: Keyboard> Chipset for Chip8Chipset<O, D
 #[cfg(test)]
 mod test_chipset {
     use super::*;
-    use crate::display::ConsoleDisplay;
-    use crate::keyboard::ConsoleKeyboard;
+    use crate::display::GraphicDisplay;
+    use crate::gpu::Chip8Gpu;
+    use crate::keyboard::{Key, Keyboard};
     use crate::memory::{Memory, Registers, Stack};
     use std::cell::Cell;
+    use std::ops;
 
-    impl<O: OpCodesProcessor, D: Display, K: Keyboard> Chip8Chipset<O, D, K> {
+    struct MockedGraphicDisplay {}
+    impl GraphicDisplay for MockedGraphicDisplay {
+        fn draw<M>(&mut self, _: &M)
+        where
+            M: ops::Index<usize, Output = [u8]>,
+        {
+        }
+    }
+
+    impl<O: OpCodesProcessor, G: Gpu, K: Keyboard, D: GraphicDisplay> Chip8Chipset<O, G, K, D> {
         pub fn get_opcode_processor(&self) -> &O {
             &self.opcode_processor
+        }
+    }
+
+    struct MockedKeyboard {}
+    impl Keyboard for MockedKeyboard {
+        fn wait_for_key_press(&mut self) -> Key {
+            Key::Key0
+        }
+
+        fn get_pressed_key(&mut self) -> Option<Key> {
+            None
         }
     }
 
@@ -356,8 +386,9 @@ mod test_chipset {
             stack,
             registers,
             MockedOpCodesProcessor::new(),
-            ConsoleDisplay::new(),
-            ConsoleKeyboard::new(),
+            Chip8Gpu::new(),
+            MockedKeyboard {},
+            MockedGraphicDisplay {},
         );
 
         let opcode = chipset.current_opcode().unwrap();
@@ -419,8 +450,9 @@ mod test_chipset {
                 stack,
                 registers,
                 MockedOpCodesProcessor::new(),
-                ConsoleDisplay::new(),
-                ConsoleKeyboard::new(),
+                Chip8Gpu::new(),
+                MockedKeyboard {},
+                MockedGraphicDisplay {},
             );
 
             let _ = chipset.tick();
@@ -462,7 +494,7 @@ mod test_chipset {
         }
     }
     impl OpCodesProcessor for MockedOpCodesProcessor {
-        fn clear_screen(&self, _registers: &mut dyn Display) {
+        fn clear_screen(&self, _registers: &mut dyn Gpu) {
             self.set_matched_method("clear_screen");
         }
         fn return_from_subroutine(&self, _stack: &mut Stack, _program_counter: &mut u16) {
@@ -562,7 +594,7 @@ mod test_chipset {
             _x: u8,
             _y: u8,
             _n: u8,
-            _display: &mut dyn Display,
+            _gpu: &mut dyn Gpu,
             _memory: &Memory,
             _address_register: u16,
             _registers: &mut Registers,

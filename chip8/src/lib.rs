@@ -1,12 +1,15 @@
+pub mod display;
+pub mod keyboard;
+
 mod chipset;
-mod display;
-mod keyboard;
+mod gpu;
 mod memory;
 mod opcode_processor;
 
 use self::chipset::{Chip8Chipset, Chipset, PROGRAM_COUNTER_BOUNDARY};
-use self::display::ConsoleDisplay;
-use self::keyboard::ConsoleKeyboard;
+use self::display::GraphicDisplay;
+use self::gpu::Chip8Gpu;
+use self::keyboard::Keyboard;
 use self::memory::{Memory, Registers, Stack};
 use self::opcode_processor::Chip8OpCodesProcessor;
 use std::thread::sleep;
@@ -17,6 +20,8 @@ pub struct Emulator {
     stack: Stack,
     fontset: Fontset,
     registers: Registers,
+    opcode_processor: Chip8OpCodesProcessor,
+    gpu: Chip8Gpu,
 }
 
 impl Emulator {
@@ -26,10 +31,21 @@ impl Emulator {
             stack: Stack::new(),
             fontset: Fontset::new(),
             registers: Registers::new(),
+            opcode_processor: Chip8OpCodesProcessor::new(),
+            gpu: Chip8Gpu::new(),
         }
     }
 
-    pub fn initialize(mut self, data: &[u8]) -> InitializedEmulator {
+    pub fn initialize<'a, K, D>(
+        mut self,
+        data: &[u8],
+        keyboard: K,
+        display: D,
+    ) -> InitializedEmulator<'a>
+    where
+        K: Keyboard + 'a,
+        D: GraphicDisplay + 'a,
+    {
         self.load_fonts();
         self.load_program(data);
 
@@ -38,9 +54,10 @@ impl Emulator {
                 self.memory,
                 self.stack,
                 self.registers,
-                Chip8OpCodesProcessor::new(),
-                ConsoleDisplay::new(),
-                ConsoleKeyboard::new(),
+                self.opcode_processor,
+                self.gpu,
+                keyboard,
+                display,
             )),
         }
     }
@@ -61,11 +78,11 @@ impl Emulator {
     }
 }
 
-pub struct InitializedEmulator {
-    chipset: Box<dyn Chipset>,
+pub struct InitializedEmulator<'a> {
+    chipset: Box<dyn Chipset + 'a>,
 }
 
-impl InitializedEmulator {
+impl<'a> InitializedEmulator<'a> {
     pub fn run(&mut self) {
         while let Ok(()) = self.chipset.tick() {
             sleep(Duration::from_millis(2));
@@ -110,6 +127,29 @@ impl Fontset {
 mod test_emulator {
     use super::*;
 
+    use crate::keyboard::Key;
+    use std::ops;
+
+    struct MockedKeyboard {}
+    impl Keyboard for MockedKeyboard {
+        fn get_pressed_key(&mut self) -> Option<Key> {
+            None
+        }
+
+        fn wait_for_key_press(&mut self) -> Key {
+            Key::Key0
+        }
+    }
+
+    struct MocketDisplay {}
+    impl GraphicDisplay for MocketDisplay {
+        fn draw<M>(&mut self, _: &M)
+        where
+            M: ops::Index<usize, Output = [u8]>,
+        {
+        }
+    }
+
     #[test]
     fn test_can_run_program() {
         let emulator = Emulator {
@@ -117,9 +157,12 @@ mod test_emulator {
             stack: Stack::new(),
             fontset: Fontset::new(),
             registers: Registers::new(),
+            gpu: Chip8Gpu::new(),
+            opcode_processor: Chip8OpCodesProcessor::new(),
         };
 
-        let mut initialized_emulator = emulator.initialize(&[0x00, 0xe0]);
+        let mut initialized_emulator =
+            emulator.initialize(&[0x00, 0xe0], MockedKeyboard {}, MocketDisplay {});
 
         initialized_emulator.run();
     }

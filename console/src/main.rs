@@ -1,3 +1,5 @@
+mod implementation;
+
 use chip8::Emulator;
 use std::env;
 use std::fs::File;
@@ -11,6 +13,8 @@ fn main() {
     rom.read_to_end(&mut buffer).unwrap();
 
     let emulator = Emulator::new();
-    let mut initialized_emulator = emulator.initialize(&buffer);
+    let keyboard = crate::implementation::keyboard::ConsoleKeyboard::new();
+    let display = crate::implementation::display::ConsoleDisplay::new();
+    let mut initialized_emulator = emulator.initialize(&buffer, keyboard, display);
     initialized_emulator.run();
 }

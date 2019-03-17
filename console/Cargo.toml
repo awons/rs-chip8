@@ -6,3 +6,8 @@ edition = "2018"
 
 [dependencies]
 chip8 = { path = "../chip8" }
+termion = "1.5.1"
+
+[profile.release]
+lto = true
+debug-assertions = false

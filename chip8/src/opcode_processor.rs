@@ -1,7 +1,7 @@
 use rand;
 
 use crate::chipset::INSTRUCTION_SIZE;
-use crate::display::Display;
+use crate::gpu::Gpu;
 use crate::keyboard::{Key, Keyboard};
 use crate::memory::{Memory, Registers, Stack};
 
@@ -65,7 +65,7 @@ impl fmt::LowerHex for OpCode {
 }
 
 pub trait OpCodesProcessor {
-    fn clear_screen(&self, _: &mut dyn Display);
+    fn clear_screen(&self, _: &mut dyn Gpu);
     fn return_from_subroutine(&self, stack: &mut Stack, program_counter: &mut u16);
     fn jump_to_address(&self, program_counter: &mut u16, address: u16);
     fn call_subroutine(&self, program_counter: &mut u16, address: u16, stack: &mut Stack);
@@ -92,7 +92,7 @@ pub trait OpCodesProcessor {
         x: u8,
         y: u8,
         n: u8,
-        display: &mut dyn Display,
+        display: &mut dyn Gpu,
         memory: &Memory,
         address_register: u16,
         registers: &mut Registers,
@@ -149,7 +149,7 @@ impl Chip8OpCodesProcessor {
 }
 
 impl OpCodesProcessor for Chip8OpCodesProcessor {
-    fn clear_screen(&self, display: &mut dyn Display) {
+    fn clear_screen(&self, display: &mut dyn Gpu) {
         display.clear();
     }
 
@@ -311,7 +311,7 @@ impl OpCodesProcessor for Chip8OpCodesProcessor {
         vx: u8,
         vy: u8,
         n: u8,
-        display: &mut dyn Display,
+        display: &mut dyn Gpu,
         memory: &Memory,
         address_register: u16,
         registers: &mut Registers,
@@ -494,25 +494,27 @@ mod test_opcode {
 #[cfg(test)]
 mod test_opcodes_processor {
     use super::*;
-    use crate::display::Display;
+    use crate::gpu::{Gpu, GraphicMemory};
     use crate::keyboard::{Key, Keyboard};
     use crate::memory::{Memory, Registers, Stack};
 
-    struct MockedDisplay {
+    struct MockedGpu {
         draw_sprite_called: bool,
         clear_called: bool,
+        graphic_memory: GraphicMemory,
     }
 
-    impl MockedDisplay {
+    impl MockedGpu {
         fn new() -> Self {
-            MockedDisplay {
+            MockedGpu {
                 draw_sprite_called: false,
                 clear_called: false,
+                graphic_memory: GraphicMemory::new(),
             }
         }
     }
 
-    impl Display for MockedDisplay {
+    impl Gpu for MockedGpu {
         fn draw_sprite(
             &mut self,
             x: u8,
@@ -535,6 +537,10 @@ mod test_opcodes_processor {
         fn clear(&mut self) {
             self.clear_called = true;
         }
+
+        fn get_memory<'a>(&'a self) -> &GraphicMemory {
+            &self.graphic_memory
+        }
     }
 
     struct MockedKeyboard;
@@ -550,7 +556,7 @@ mod test_opcodes_processor {
 
     #[test]
     fn test_clear_display() {
-        let mut display = MockedDisplay::new();
+        let mut display = MockedGpu::new();
 
         Chip8OpCodesProcessor::new().clear_screen(&mut display);
 
@@ -1144,7 +1150,7 @@ mod test_opcodes_processor {
     fn test_draw_vx_vy_n_without_collision() {
         let mut memory = Memory::new();
         let address_register: u16 = 0x0;
-        let mut display = MockedDisplay::new();
+        let mut display = MockedGpu::new();
         let mut registers = Registers::new();
 
         registers.set_register_at(0, 10);
@@ -1167,7 +1173,7 @@ mod test_opcodes_processor {
     fn test_draw_vx_vy_n_with_collision() {
         let mut memory = Memory::new();
         let address_register: u16 = 0x0;
-        let mut display = MockedDisplay::new();
+        let mut display = MockedGpu::new();
         let mut registers = Registers::new();
 
         registers.set_register_at(0, 11);

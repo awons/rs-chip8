@@ -8,9 +8,5 @@ edition = "2018"
 rand = "^0.5"
 termion = "1.5.1"
 
-[profile.release]
-lto = true
-debug-assertions = false
-
 [lib]
 name = "chip8"
