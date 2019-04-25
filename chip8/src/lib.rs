@@ -1,12 +1,12 @@
+pub mod chipset;
 pub mod display;
 pub mod keyboard;
 
-mod chipset;
 mod gpu;
 mod memory;
 mod opcode_processor;
 
-use self::chipset::{Chip8Chipset, Chipset, PROGRAM_COUNTER_BOUNDARY};
+use self::chipset::{Chip8Chipset, Chipset, RandomByteGenerator, PROGRAM_COUNTER_BOUNDARY};
 use self::display::GraphicDisplay;
 use self::gpu::Chip8Gpu;
 use self::keyboard::Keyboard;
@@ -36,15 +36,17 @@ impl Emulator {
         }
     }
 
-    pub fn initialize<'a, K, D>(
+    pub fn initialize<'a, K, D, R>(
         mut self,
         data: &[u8],
         keyboard: K,
         display: D,
+        random_byte_generator: R,
     ) -> InitializedEmulator<'a>
     where
         K: Keyboard + 'a,
         D: GraphicDisplay + 'a,
+        R: RandomByteGenerator + 'a,
     {
         self.load_fonts();
         self.load_program(data);
@@ -58,6 +60,7 @@ impl Emulator {
                 self.gpu,
                 keyboard,
                 display,
+                random_byte_generator,
             )),
         }
     }
@@ -126,8 +129,8 @@ impl Fontset {
 #[cfg(test)]
 mod test_emulator {
     use super::*;
-
     use crate::keyboard::Key;
+    use rand;
     use std::ops;
 
     struct MockedKeyboard {}
@@ -150,6 +153,13 @@ mod test_emulator {
         }
     }
 
+    struct TestRandomByteGenerator {}
+    impl RandomByteGenerator for TestRandomByteGenerator {
+        fn generate(&self) -> u8 {
+            rand::random::<u8>()
+        }
+    }
+
     #[test]
     fn test_can_run_program() {
         let emulator = Emulator {
@@ -161,8 +171,12 @@ mod test_emulator {
             opcode_processor: Chip8OpCodesProcessor::new(),
         };
 
-        let mut initialized_emulator =
-            emulator.initialize(&[0x00, 0xe0], MockedKeyboard {}, MocketDisplay {});
+        let mut initialized_emulator = emulator.initialize(
+            &[0x00, 0xe0],
+            MockedKeyboard {},
+            MocketDisplay {},
+            TestRandomByteGenerator {},
+        );
 
         initialized_emulator.run();
     }

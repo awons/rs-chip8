@@ -15,6 +15,9 @@ fn main() {
     let emulator = Emulator::new();
     let keyboard = crate::implementation::keyboard::ConsoleKeyboard::new();
     let display = crate::implementation::display::ConsoleDisplay::new();
-    let mut initialized_emulator = emulator.initialize(&buffer, keyboard, display);
+    let random_byte_generator =
+        crate::implementation::random_byte_generator::RandRandomByteGenerator {};
+    let mut initialized_emulator =
+        emulator.initialize(&buffer, keyboard, display, random_byte_generator);
     initialized_emulator.run();
 }

@@ -7,13 +7,23 @@ use crate::opcode_processor::{OpCode, OpCodesProcessor};
 pub const PROGRAM_COUNTER_BOUNDARY: u16 = 0x200;
 pub const INSTRUCTION_SIZE: u16 = 2;
 
+pub trait RandomByteGenerator {
+    fn generate(&self) -> u8;
+}
+
 pub trait Chipset {
     fn get_memory(&self) -> &Memory;
     fn tick(&mut self) -> Result<(), String>;
     fn current_opcode(&mut self) -> Option<OpCode>;
 }
 
-pub struct Chip8Chipset<O: OpCodesProcessor, G: Gpu, K: Keyboard, D: GraphicDisplay> {
+pub struct Chip8Chipset<
+    O: OpCodesProcessor,
+    G: Gpu,
+    K: Keyboard,
+    D: GraphicDisplay,
+    R: RandomByteGenerator,
+> {
     memory: Memory,
     registers: Registers,
     address_register: u16,
@@ -25,9 +35,12 @@ pub struct Chip8Chipset<O: OpCodesProcessor, G: Gpu, K: Keyboard, D: GraphicDisp
     delay_timer: u8,
     sound_timer: u8,
     display: D,
+    random_byte_generator: R,
 }
 
-impl<O: OpCodesProcessor, G: Gpu, K: Keyboard, D: GraphicDisplay> Chip8Chipset<O, G, K, D> {
+impl<O: OpCodesProcessor, G: Gpu, K: Keyboard, D: GraphicDisplay, R: RandomByteGenerator>
+    Chip8Chipset<O, G, K, D, R>
+{
     pub fn new(
         memory: Memory,
         stack: Stack,
@@ -36,6 +49,7 @@ impl<O: OpCodesProcessor, G: Gpu, K: Keyboard, D: GraphicDisplay> Chip8Chipset<O
         gpu: G,
         keyboard: K,
         display: D,
+        random_byte_generator: R,
     ) -> Self {
         Self {
             memory,
@@ -49,12 +63,13 @@ impl<O: OpCodesProcessor, G: Gpu, K: Keyboard, D: GraphicDisplay> Chip8Chipset<O
             delay_timer: 0,
             sound_timer: 0,
             display,
+            random_byte_generator,
         }
     }
 }
 
-impl<O: OpCodesProcessor, G: Gpu, K: Keyboard, D: GraphicDisplay> Chipset
-    for Chip8Chipset<O, G, K, D>
+impl<O: OpCodesProcessor, G: Gpu, K: Keyboard, D: GraphicDisplay, R: RandomByteGenerator> Chipset
+    for Chip8Chipset<O, G, K, D, R>
 {
     fn get_memory(&self) -> &Memory {
         &self.memory
@@ -211,6 +226,7 @@ impl<O: OpCodesProcessor, G: Gpu, K: Keyboard, D: GraphicDisplay> Chipset
                     }
                     (0xc, _, _, _) => {
                         self.opcode_processor.rand_vx_equal_rand_and_nn(
+                            &self.random_byte_generator,
                             &mut self.registers,
                             opcode.get_x(),
                             opcode.get_short_address(),
@@ -345,6 +361,7 @@ mod test_chipset {
     use crate::gpu::Chip8Gpu;
     use crate::keyboard::{Key, Keyboard};
     use crate::memory::{Memory, Registers, Stack};
+    use rand;
     use std::cell::Cell;
     use std::ops;
 
@@ -357,7 +374,9 @@ mod test_chipset {
         }
     }
 
-    impl<O: OpCodesProcessor, G: Gpu, K: Keyboard, D: GraphicDisplay> Chip8Chipset<O, G, K, D> {
+    impl<O: OpCodesProcessor, G: Gpu, K: Keyboard, D: GraphicDisplay, R: RandomByteGenerator>
+        Chip8Chipset<O, G, K, D, R>
+    {
         pub fn get_opcode_processor(&self) -> &O {
             &self.opcode_processor
         }
@@ -371,6 +390,13 @@ mod test_chipset {
 
         fn get_pressed_key(&mut self) -> Option<Key> {
             None
+        }
+    }
+
+    struct TestRandomByteGenerator {}
+    impl RandomByteGenerator for TestRandomByteGenerator {
+        fn generate(&self) -> u8 {
+            rand::random::<u8>()
         }
     }
 
@@ -389,6 +415,7 @@ mod test_chipset {
             Chip8Gpu::new(),
             MockedKeyboard {},
             MockedGraphicDisplay {},
+            TestRandomByteGenerator {},
         );
 
         let opcode = chipset.current_opcode().unwrap();
@@ -453,6 +480,7 @@ mod test_chipset {
                 Chip8Gpu::new(),
                 MockedKeyboard {},
                 MockedGraphicDisplay {},
+                TestRandomByteGenerator {},
             );
 
             let _ = chipset.tick();
@@ -586,7 +614,13 @@ mod test_chipset {
         ) {
             self.set_matched_method("flow_pc_equal_v0_plus_nnn");
         }
-        fn rand_vx_equal_rand_and_nn(&self, _registers: &mut Registers, _x: u8, _nn: u8) {
+        fn rand_vx_equal_rand_and_nn(
+            &self,
+            _generator: &RandomByteGenerator,
+            _registers: &mut Registers,
+            _x: u8,
+            _nn: u8,
+        ) {
             self.set_matched_method("rand_vx_equal_rand_and_nn");
         }
         fn draw_vx_vy_n(

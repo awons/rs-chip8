@@ -1,6 +1,4 @@
-use rand;
-
-use crate::chipset::INSTRUCTION_SIZE;
+use crate::chipset::{RandomByteGenerator, INSTRUCTION_SIZE};
 use crate::gpu::Gpu;
 use crate::keyboard::{Key, Keyboard};
 use crate::memory::{Memory, Registers, Stack};
@@ -86,7 +84,13 @@ pub trait OpCodesProcessor {
     fn cond_vx_not_equal_vy(&self, registers: &Registers, program_counter: &mut u16, x: u8, y: u8);
     fn mem_i_equal_nnn(&self, address_register: &mut u16, nnn: u16);
     fn flow_pc_equal_v0_plus_nnn(&self, program_counter: &mut u16, nnn: u16, registers: &Registers);
-    fn rand_vx_equal_rand_and_nn(&self, registers: &mut Registers, x: u8, nn: u8);
+    fn rand_vx_equal_rand_and_nn(
+        &self,
+        generator: &RandomByteGenerator,
+        registers: &mut Registers,
+        x: u8,
+        nn: u8,
+    );
     fn draw_vx_vy_n(
         &self,
         x: u8,
@@ -302,8 +306,14 @@ impl OpCodesProcessor for Chip8OpCodesProcessor {
         *program_counter = nnn + u16::from(registers.get_register_at(0));
     }
 
-    fn rand_vx_equal_rand_and_nn(&self, registers: &mut Registers, x: u8, nn: u8) {
-        registers.set_register_at(x as usize, rand::random::<u8>() & nn);
+    fn rand_vx_equal_rand_and_nn(
+        &self,
+        generator: &RandomByteGenerator,
+        registers: &mut Registers,
+        x: u8,
+        nn: u8,
+    ) {
+        registers.set_register_at(x as usize, generator.generate() & nn);
     }
 
     fn draw_vx_vy_n(
@@ -497,6 +507,7 @@ mod test_opcodes_processor {
     use crate::gpu::{Gpu, GraphicMemory};
     use crate::keyboard::{Key, Keyboard};
     use crate::memory::{Memory, Registers, Stack};
+    use rand;
 
     struct MockedGpu {
         draw_sprite_called: bool,
@@ -551,6 +562,13 @@ mod test_opcodes_processor {
 
         fn get_pressed_key(&mut self) -> Option<Key> {
             Some(Key::Key4)
+        }
+    }
+
+    struct TestRandomByteGenerator {}
+    impl RandomByteGenerator for TestRandomByteGenerator {
+        fn generate(&self) -> u8 {
+            rand::random::<u8>()
         }
     }
 
@@ -1011,13 +1029,14 @@ mod test_opcodes_processor {
 
         let mut registers = Registers::new();
 
-        Chip8OpCodesProcessor::new().rand_vx_equal_rand_and_nn(&mut registers, x, nn);
+        let generator = TestRandomByteGenerator {};
+        Chip8OpCodesProcessor::new().rand_vx_equal_rand_and_nn(&generator, &mut registers, x, nn);
         let x_1 = registers.get_register_at(x as usize);
 
-        Chip8OpCodesProcessor::new().rand_vx_equal_rand_and_nn(&mut registers, x, nn);
+        Chip8OpCodesProcessor::new().rand_vx_equal_rand_and_nn(&generator, &mut registers, x, nn);
         let x_2 = registers.get_register_at(x as usize);
 
-        Chip8OpCodesProcessor::new().rand_vx_equal_rand_and_nn(&mut registers, x, nn);
+        Chip8OpCodesProcessor::new().rand_vx_equal_rand_and_nn(&generator, &mut registers, x, nn);
         let x_3 = registers.get_register_at(x as usize);
 
         assert_ne!(x_1, x_2);
