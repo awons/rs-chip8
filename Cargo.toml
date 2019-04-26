@@ -2,5 +2,11 @@
 
 members = [
     "console",
-    "chip8"
+    "chip8",
+    "wasm-app",
 ]
+
+[profile.release]
+lto = true
+debug-assertions = false
+opt-level = "z"
