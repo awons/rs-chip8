@@ -19,6 +19,7 @@ pub struct Game {
 #[wasm_bindgen]
 impl Game {
     pub fn new() -> Game {
+        utils::set_panic_hook();
         Game {
             rom: vec![0; 0xe00],
         }
