@@ -6,14 +6,32 @@ mod gpu;
 mod memory;
 mod opcode_processor;
 
-use self::chipset::{Chip8Chipset, Chipset, RandomByteGenerator, PROGRAM_COUNTER_BOUNDARY};
-use self::display::GraphicDisplay;
-use self::gpu::Chip8Gpu;
-use self::keyboard::Keyboard;
-use self::memory::{Memory, Registers, Stack};
-use self::opcode_processor::Chip8OpCodesProcessor;
-use std::thread::sleep;
-use std::time::Duration;
+use chipset::PROGRAM_COUNTER_BOUNDARY;
+use chipset::{Chip8Chipset, Chipset, RandomByteGenerator};
+use display::GraphicDisplay;
+use gpu::Chip8Gpu;
+use keyboard::Keyboard;
+use memory::{Memory, Registers, Stack};
+use opcode_processor::Chip8OpCodesProcessor;
+use std::result::Result;
+
+pub trait InitializableEmulator {
+    fn run_cycle(&mut self) -> Result<(), String>;
+}
+
+pub trait Emulatable {
+    fn initialize<'a, K, D, R>(
+        self,
+        data: &[u8],
+        keyboard: K,
+        display: D,
+        random_byte_generator: R,
+    ) -> Box<InitializableEmulator + 'a>
+    where
+        K: Keyboard + 'a,
+        D: GraphicDisplay + 'a,
+        R: RandomByteGenerator + 'a;
+}
 
 pub struct Emulator {
     memory: Memory,
@@ -36,13 +54,30 @@ impl Emulator {
         }
     }
 
-    pub fn initialize<'a, K, D, R>(
+    pub fn load_fonts(&mut self) {
+        for (address, font) in self.fontset.get_values().iter().enumerate() {
+            self.memory.write(address as u16, *font);
+        }
+    }
+
+    pub fn load_program(&mut self, data: &[u8]) {
+        let mut address = PROGRAM_COUNTER_BOUNDARY;
+
+        for byte in data {
+            self.memory.write(address, *byte);
+            address += 1;
+        }
+    }
+}
+
+impl Emulatable for Emulator {
+    fn initialize<'a, K, D, R>(
         mut self,
         data: &[u8],
         keyboard: K,
         display: D,
         random_byte_generator: R,
-    ) -> InitializedEmulator<'a>
+    ) -> Box<dyn InitializableEmulator + 'a>
     where
         K: Keyboard + 'a,
         D: GraphicDisplay + 'a,
@@ -51,7 +86,7 @@ impl Emulator {
         self.load_fonts();
         self.load_program(data);
 
-        InitializedEmulator {
+        Box::new(InitializedEmulator {
             chipset: Box::new(Chip8Chipset::new(
                 self.memory,
                 self.stack,
@@ -62,34 +97,17 @@ impl Emulator {
                 display,
                 random_byte_generator,
             )),
-        }
-    }
-
-    fn load_fonts(&mut self) {
-        for (address, font) in self.fontset.get_values().iter().enumerate() {
-            self.memory.write(address as u16, *font);
-        }
-    }
-
-    fn load_program(&mut self, data: &[u8]) {
-        let mut address = PROGRAM_COUNTER_BOUNDARY;
-
-        for byte in data {
-            self.memory.write(address, *byte);
-            address += 1;
-        }
+        })
     }
 }
 
-pub struct InitializedEmulator<'a> {
+struct InitializedEmulator<'a> {
     chipset: Box<dyn Chipset + 'a>,
 }
 
-impl<'a> InitializedEmulator<'a> {
-    pub fn run(&mut self) {
-        while let Ok(()) = self.chipset.tick() {
-            sleep(Duration::from_millis(2));
-        }
+impl<'a> InitializableEmulator for InitializedEmulator<'a> {
+    fn run_cycle(&mut self) -> Result<(), String> {
+        self.chipset.tick()
     }
 }
 
@@ -128,8 +146,14 @@ impl Fontset {
 
 #[cfg(test)]
 mod test_emulator {
-    use super::*;
-    use crate::keyboard::Key;
+    use super::{Emulatable, Emulator, Fontset};
+    use crate::chipset::RandomByteGenerator;
+    use crate::display::GraphicDisplay;
+    use crate::gpu::Chip8Gpu;
+    use crate::keyboard::{Key, Keyboard};
+    use crate::memory::{Memory, Registers, Stack};
+    use crate::opcode_processor::Chip8OpCodesProcessor;
+
     use rand;
     use std::ops;
 
@@ -178,6 +202,6 @@ mod test_emulator {
             TestRandomByteGenerator {},
         );
 
-        initialized_emulator.run();
+        while let Ok(()) = initialized_emulator.run_cycle() {}
     }
 }
