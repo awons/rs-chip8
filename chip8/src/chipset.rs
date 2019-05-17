@@ -11,12 +11,6 @@ pub trait RandomByteGenerator {
     fn generate(&self) -> u8;
 }
 
-pub trait Chipset {
-    fn get_memory(&self) -> &Memory;
-    fn tick(&mut self) -> Result<(), String>;
-    fn current_opcode(&mut self) -> Option<OpCode>;
-}
-
 pub struct Chip8Chipset<
     O: OpCodesProcessor,
     G: Gpu,
@@ -50,8 +44,8 @@ impl<O: OpCodesProcessor, G: Gpu, K: Keyboard, D: GraphicDisplay, R: RandomByteG
         keyboard: K,
         display: D,
         random_byte_generator: R,
-    ) -> Self {
-        Self {
+    ) -> Chip8Chipset<O, G, K, D, R> {
+        Chip8Chipset {
             memory,
             registers,
             address_register: 0,
@@ -66,16 +60,12 @@ impl<O: OpCodesProcessor, G: Gpu, K: Keyboard, D: GraphicDisplay, R: RandomByteG
             random_byte_generator,
         }
     }
-}
 
-impl<O: OpCodesProcessor, G: Gpu, K: Keyboard, D: GraphicDisplay, R: RandomByteGenerator> Chipset
-    for Chip8Chipset<O, G, K, D, R>
-{
-    fn get_memory(&self) -> &Memory {
-        &self.memory
+    pub fn get_keyboard(&self) -> &K {
+        &self.keyboard
     }
 
-    fn tick(&mut self) -> Result<(), String> {
+    pub fn tick(&mut self) -> Result<(), String> {
         let mut skip_instruction = false;
 
         if self.delay_timer > 0 {
@@ -522,7 +512,10 @@ mod test_chipset {
         }
     }
     impl OpCodesProcessor for MockedOpCodesProcessor {
-        fn clear_screen(&self, _registers: &mut dyn Gpu) {
+        fn clear_screen<G>(&self, _registers: &mut G)
+        where
+            G: Gpu,
+        {
             self.set_matched_method("clear_screen");
         }
         fn return_from_subroutine(&self, _stack: &mut Stack, _program_counter: &mut u16) {
@@ -623,16 +616,18 @@ mod test_chipset {
         ) {
             self.set_matched_method("rand_vx_equal_rand_and_nn");
         }
-        fn draw_vx_vy_n(
+        fn draw_vx_vy_n<G>(
             &self,
             _x: u8,
             _y: u8,
             _n: u8,
-            _gpu: &mut dyn Gpu,
+            _gpu: &mut G,
             _memory: &Memory,
             _address_register: u16,
             _registers: &mut Registers,
-        ) {
+        ) where
+            G: Gpu,
+        {
             self.set_matched_method("draw_vx_vy_n");
         }
         fn mem_i_equal_i_plus_vx(
@@ -678,31 +673,37 @@ mod test_chipset {
         ) {
             self.set_matched_method("mem_reg_load");
         }
-        fn keyop_if_key_equal_vx(
+        fn keyop_if_key_equal_vx<K>(
             &self,
-            _keyboard: &mut dyn Keyboard,
+            _keyboard: &mut K,
             _registers: &Registers,
             _program_counter: &mut u16,
             _x: u8,
-        ) {
+        ) where
+            K: Keyboard,
+        {
             self.set_matched_method("keyop_if_key_equal_vx");
         }
-        fn keyop_if_key_not_equal_vx(
+        fn keyop_if_key_not_equal_vx<K>(
             &self,
-            _keyboard: &mut dyn Keyboard,
+            _keyboard: &mut K,
             _registers: &Registers,
             _program_counter: &mut u16,
             _x: u8,
-        ) {
+        ) where
+            K: Keyboard,
+        {
             self.set_matched_method("keyop_if_key_not_equal_vx");
         }
-        fn keyop_vx_equal_key(
+        fn keyop_vx_equal_key<K>(
             &self,
-            _keyboard: &mut dyn Keyboard,
+            _keyboard: &mut K,
             _registers: &mut Registers,
             _x: u8,
             _program_counter: &mut u16,
-        ) {
+        ) where
+            K: Keyboard,
+        {
             self.set_matched_method("keyop_vx_equal_key");
         }
         fn timer_vx_equal_get_delay(&self, _delay_timer: u8, _registers: &mut Registers, _x: u8) {

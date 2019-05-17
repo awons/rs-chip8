@@ -1,8 +1,13 @@
-mod implementation;
 #[macro_use]
 mod utils;
+mod implementation;
 
-use chip8::{Emulatable, Emulator, InitializableEmulator};
+use chip8::gpu::Chip8Gpu;
+use chip8::opcode_processor::Chip8OpCodesProcessor;
+use chip8::{Emulator, InitializedEmulator};
+use implementation::display::BrowserDisplay;
+use implementation::keyboard::BrowserKeyboard;
+use implementation::random_byte_generator::RandRandomByteGenerator;
 use wasm_bindgen::prelude::*;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
@@ -31,11 +36,10 @@ impl Game {
 
     pub fn start(&mut self) -> RunningGame {
         let emulator = Emulator::new();
-        let keyboard = implementation::keyboard::BrowserKeyboard::new();
-        let display = implementation::display::BrowserDisplay::new();
+        let keyboard = BrowserKeyboard::new();
+        let display = BrowserDisplay::new();
+        let random_byte_generator = RandRandomByteGenerator::new();
 
-        let random_byte_generator =
-            implementation::random_byte_generator::RandRandomByteGenerator {};
         let initialized_emulator =
             emulator.initialize(&self.rom, keyboard, display, random_byte_generator);
 
@@ -47,7 +51,13 @@ impl Game {
 
 #[wasm_bindgen]
 pub struct RunningGame {
-    emulator: Box<dyn InitializableEmulator>,
+    emulator: InitializedEmulator<
+        Chip8OpCodesProcessor,
+        Chip8Gpu,
+        BrowserKeyboard,
+        BrowserDisplay,
+        RandRandomByteGenerator,
+    >,
 }
 
 #[wasm_bindgen]
@@ -57,5 +67,9 @@ impl RunningGame {
             Ok(()) => true,
             _ => false,
         }
+    }
+
+    pub fn get_pressed_key_ptr(&self) -> *const u8 {
+        self.emulator.get_keyboard().get_pressed_key_ptr()
     }
 }

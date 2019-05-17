@@ -10,6 +10,7 @@ const romReader = new FileReader();
 let game = null;
 let romBytes = null;
 let globalReloadFlag = null;
+let pressedKey = null;
 
 const sleep = (milliseconds) => {
     return new Promise(resolve => setTimeout(resolve, milliseconds))
@@ -17,6 +18,9 @@ const sleep = (milliseconds) => {
 
 const runGame = async (runningGame) => {
     const localReloadFlag = globalReloadFlag = new Object();
+
+    const pressedKeyPtr = runningGame.get_pressed_key_ptr();
+    pressedKey = new Uint8Array(memory.buffer, pressedKeyPtr, 0x1);
 
     while (runningGame.run_cycle()) {
         if (localReloadFlag !== globalReloadFlag) {
@@ -41,3 +45,11 @@ startButton.addEventListener("click", event => {
     globalReloadFlag = new Object();
     runGame(game.start());
 });
+
+document.addEventListener("keydown", event => {
+    pressedKey.set([event.keyCode]);
+});
+
+document.addEventListener("keyup", event => {
+    pressedKey.set([0]);
+})

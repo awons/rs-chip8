@@ -63,7 +63,9 @@ impl fmt::LowerHex for OpCode {
 }
 
 pub trait OpCodesProcessor {
-    fn clear_screen(&self, _: &mut dyn Gpu);
+    fn clear_screen<G>(&self, _: &mut G)
+    where
+        G: Gpu;
     fn return_from_subroutine(&self, stack: &mut Stack, program_counter: &mut u16);
     fn jump_to_address(&self, program_counter: &mut u16, address: u16);
     fn call_subroutine(&self, program_counter: &mut u16, address: u16, stack: &mut Stack);
@@ -91,16 +93,17 @@ pub trait OpCodesProcessor {
         x: u8,
         nn: u8,
     );
-    fn draw_vx_vy_n(
+    fn draw_vx_vy_n<G>(
         &self,
         x: u8,
         y: u8,
         n: u8,
-        display: &mut dyn Gpu,
+        display: &mut G,
         memory: &Memory,
         address_register: u16,
         registers: &mut Registers,
-    );
+    ) where
+        G: Gpu;
     fn mem_i_equal_i_plus_vx(&self, registers: &mut Registers, address_register: &mut u16, x: u8);
     fn mem_i_equal_sprite_addr_vx(&self, registers: &Registers, address_register: &mut u16, x: u8);
     fn mem_bcd(&self, registers: &Registers, address_register: u16, memory: &mut Memory, x: u8);
@@ -118,27 +121,30 @@ pub trait OpCodesProcessor {
         address_register: u16,
         x: u8,
     );
-    fn keyop_if_key_equal_vx(
+    fn keyop_if_key_equal_vx<K>(
         &self,
-        keyboard: &mut dyn Keyboard,
+        keyboard: &mut K,
         registers: &Registers,
         program_counter: &mut u16,
         x: u8,
-    );
-    fn keyop_if_key_not_equal_vx(
+    ) where
+        K: Keyboard;
+    fn keyop_if_key_not_equal_vx<K>(
         &self,
-        keyboard: &mut dyn Keyboard,
+        keyboard: &mut K,
         registers: &Registers,
         program_counter: &mut u16,
         x: u8,
-    );
-    fn keyop_vx_equal_key(
+    ) where
+        K: Keyboard;
+    fn keyop_vx_equal_key<K>(
         &self,
-        keyboard: &mut dyn Keyboard,
+        keyboard: &mut K,
         registers: &mut Registers,
         x: u8,
         program_counter: &mut u16,
-    );
+    ) where
+        K: Keyboard;
     fn timer_vx_equal_get_delay(&self, delay_timer: u8, registers: &mut Registers, x: u8);
     fn timer_delay_timer_equal_vx(&self, delay_timer: &mut u8, registers: &Registers, x: u8);
     fn sound_sound_timer_equal_vx(&self);
@@ -153,7 +159,10 @@ impl Chip8OpCodesProcessor {
 }
 
 impl OpCodesProcessor for Chip8OpCodesProcessor {
-    fn clear_screen(&self, display: &mut dyn Gpu) {
+    fn clear_screen<G>(&self, display: &mut G)
+    where
+        G: Gpu,
+    {
         display.clear();
     }
 
@@ -316,16 +325,18 @@ impl OpCodesProcessor for Chip8OpCodesProcessor {
         registers.set_register_at(x as usize, generator.generate() & nn);
     }
 
-    fn draw_vx_vy_n(
+    fn draw_vx_vy_n<G>(
         &self,
         vx: u8,
         vy: u8,
         n: u8,
-        display: &mut dyn Gpu,
+        display: &mut G,
         memory: &Memory,
         address_register: u16,
         registers: &mut Registers,
-    ) {
+    ) where
+        G: Gpu,
+    {
         let x = registers.get_register_at(vx as usize);
         let y = registers.get_register_at(vy as usize);
         let collision_detected = display.draw_sprite(x, y, n, address_register, memory);
@@ -387,13 +398,15 @@ impl OpCodesProcessor for Chip8OpCodesProcessor {
         }
     }
 
-    fn keyop_if_key_equal_vx(
+    fn keyop_if_key_equal_vx<K>(
         &self,
-        keyboard: &mut dyn Keyboard,
+        keyboard: &mut K,
         registers: &Registers,
         program_counter: &mut u16,
         x: u8,
-    ) {
+    ) where
+        K: Keyboard,
+    {
         if let Some(key) = keyboard.get_pressed_key() {
             match key {
                 Key::KeyESC => *program_counter = u16::max_value() - 2,
@@ -406,13 +419,15 @@ impl OpCodesProcessor for Chip8OpCodesProcessor {
         }
     }
 
-    fn keyop_if_key_not_equal_vx(
+    fn keyop_if_key_not_equal_vx<K>(
         &self,
-        keyboard: &mut dyn Keyboard,
+        keyboard: &mut K,
         registers: &Registers,
         program_counter: &mut u16,
         x: u8,
-    ) {
+    ) where
+        K: Keyboard,
+    {
         match keyboard.get_pressed_key() {
             Some(key) => match key {
                 Key::KeyESC => *program_counter = u16::max_value() - 2,
@@ -428,13 +443,15 @@ impl OpCodesProcessor for Chip8OpCodesProcessor {
         }
     }
 
-    fn keyop_vx_equal_key(
+    fn keyop_vx_equal_key<K>(
         &self,
-        keyboard: &mut dyn Keyboard,
+        keyboard: &mut K,
         registers: &mut Registers,
         x: u8,
         program_counter: &mut u16,
-    ) {
+    ) where
+        K: Keyboard,
+    {
         match keyboard.wait_for_key_press() {
             Key::KeyESC => *program_counter = u16::max_value() - 2,
             key => registers.set_register_at(x as usize, key as u8),

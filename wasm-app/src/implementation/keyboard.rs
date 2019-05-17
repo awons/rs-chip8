@@ -1,10 +1,16 @@
 use chip8::keyboard::{Key, Keyboard};
 
-pub struct BrowserKeyboard {}
+pub struct BrowserKeyboard {
+    pressed_key: [u8; 1],
+}
 
 impl BrowserKeyboard {
     pub fn new() -> BrowserKeyboard {
-        BrowserKeyboard {}
+        BrowserKeyboard { pressed_key: [0] }
+    }
+
+    pub fn get_pressed_key_ptr(&self) -> *const u8 {
+        self.pressed_key.as_ptr()
     }
 }
 

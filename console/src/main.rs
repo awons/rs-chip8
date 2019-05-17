@@ -1,6 +1,9 @@
 mod implementation;
 
-use chip8::{Emulatable, Emulator};
+use chip8::Emulator;
+use implementation::display::ConsoleDisplay;
+use implementation::keyboard::ConsoleKeyboard;
+use implementation::random_byte_generator::RandRandomByteGenerator;
 use std::env;
 use std::fs::File;
 use std::io::Read;
@@ -15,9 +18,9 @@ fn main() {
     rom.read_to_end(&mut buffer).unwrap();
 
     let emulator = Emulator::new();
-    let keyboard = implementation::keyboard::ConsoleKeyboard::new();
-    let display = implementation::display::ConsoleDisplay::new();
-    let random_byte_generator = implementation::random_byte_generator::RandRandomByteGenerator {};
+    let keyboard = ConsoleKeyboard::new();
+    let display = ConsoleDisplay::new();
+    let random_byte_generator = RandRandomByteGenerator {};
     let mut initialized_emulator =
         emulator.initialize(&buffer, keyboard, display, random_byte_generator);
 

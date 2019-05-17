@@ -1,37 +1,19 @@
 pub mod chipset;
 pub mod display;
+pub mod gpu;
 pub mod keyboard;
+pub mod opcode_processor;
 
-mod gpu;
 mod memory;
-mod opcode_processor;
 
 use chipset::PROGRAM_COUNTER_BOUNDARY;
-use chipset::{Chip8Chipset, Chipset, RandomByteGenerator};
+use chipset::{Chip8Chipset, RandomByteGenerator};
 use display::GraphicDisplay;
-use gpu::Chip8Gpu;
+use gpu::{Chip8Gpu, Gpu};
 use keyboard::Keyboard;
 use memory::{Memory, Registers, Stack};
-use opcode_processor::Chip8OpCodesProcessor;
+use opcode_processor::{Chip8OpCodesProcessor, OpCodesProcessor};
 use std::result::Result;
-
-pub trait InitializableEmulator {
-    fn run_cycle(&mut self) -> Result<(), String>;
-}
-
-pub trait Emulatable {
-    fn initialize<'a, K, D, R>(
-        self,
-        data: &[u8],
-        keyboard: K,
-        display: D,
-        random_byte_generator: R,
-    ) -> Box<InitializableEmulator + 'a>
-    where
-        K: Keyboard + 'a,
-        D: GraphicDisplay + 'a,
-        R: RandomByteGenerator + 'a;
-}
 
 pub struct Emulator {
     memory: Memory,
@@ -43,7 +25,7 @@ pub struct Emulator {
 }
 
 impl Emulator {
-    pub fn new() -> Self {
+    pub fn new() -> Emulator {
         Emulator {
             memory: Memory::new(),
             stack: Stack::new(),
@@ -68,26 +50,24 @@ impl Emulator {
             address += 1;
         }
     }
-}
 
-impl Emulatable for Emulator {
-    fn initialize<'a, K, D, R>(
+    pub fn initialize<K, D, R>(
         mut self,
         data: &[u8],
         keyboard: K,
         display: D,
         random_byte_generator: R,
-    ) -> Box<dyn InitializableEmulator + 'a>
+    ) -> InitializedEmulator<Chip8OpCodesProcessor, Chip8Gpu, K, D, R>
     where
-        K: Keyboard + 'a,
-        D: GraphicDisplay + 'a,
-        R: RandomByteGenerator + 'a,
+        K: Keyboard,
+        D: GraphicDisplay,
+        R: RandomByteGenerator,
     {
         self.load_fonts();
         self.load_program(data);
 
-        Box::new(InitializedEmulator {
-            chipset: Box::new(Chip8Chipset::new(
+        InitializedEmulator {
+            chipset: Chip8Chipset::new(
                 self.memory,
                 self.stack,
                 self.registers,
@@ -96,18 +76,36 @@ impl Emulatable for Emulator {
                 keyboard,
                 display,
                 random_byte_generator,
-            )),
-        })
+            ),
+        }
     }
 }
 
-struct InitializedEmulator<'a> {
-    chipset: Box<dyn Chipset + 'a>,
+pub struct InitializedEmulator<O, G, K, D, R>
+where
+    O: OpCodesProcessor,
+    G: Gpu,
+    K: Keyboard,
+    D: GraphicDisplay,
+    R: RandomByteGenerator,
+{
+    chipset: Chip8Chipset<O, G, K, D, R>,
 }
 
-impl<'a> InitializableEmulator for InitializedEmulator<'a> {
-    fn run_cycle(&mut self) -> Result<(), String> {
+impl<O, G, K, D, R> InitializedEmulator<O, G, K, D, R>
+where
+    O: OpCodesProcessor,
+    G: Gpu,
+    K: Keyboard,
+    D: GraphicDisplay,
+    R: RandomByteGenerator,
+{
+    pub fn run_cycle(&mut self) -> Result<(), String> {
         self.chipset.tick()
+    }
+
+    pub fn get_keyboard(&self) -> &K {
+        self.chipset.get_keyboard()
     }
 }
 
@@ -146,7 +144,7 @@ impl Fontset {
 
 #[cfg(test)]
 mod test_emulator {
-    use super::{Emulatable, Emulator, Fontset};
+    use super::{Emulator, Fontset};
     use crate::chipset::RandomByteGenerator;
     use crate::display::GraphicDisplay;
     use crate::gpu::Chip8Gpu;
