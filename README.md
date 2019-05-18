@@ -15,7 +15,7 @@ WIP
 ### WebAssembly
 
 ```bash
-cd wasm-app && wasm-pack build
+cd wasm-app && wasm-pack build --release
 cd ../chip8-www
 npm install
 npm start
@@ -23,5 +23,10 @@ npm start
 
 now go to the browser under `http://localhost:8080`.
 
-WIP
-* only display works
+Keyboard:
+1234 -> 123C
+QWER -> 456D
+ASDF -> 789E
+ZXCV -> A0BF
+
+Esc -> break game
